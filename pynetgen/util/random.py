@@ -6,8 +6,6 @@ PyNETGEN, meaning that the C implementation and PyNETGEN will both produce
 identical networks given the same set of inputs and the same RNG seed.
 """
 
-import random
-
 def netgen_random(a, b, seed=0):
     """Generates a random integer in the interval [a,b].
     
