@@ -41,7 +41,7 @@ class RandomIterator:
             is used
 
         The RandomIterator object maintains a seed attribute which is
-        overwritten whenever its generate() function is called. If the C
+        overwritten whenever its generate() method is called. If the C
         implementation's generator is used, then two RandomIterator objects
         initialized with identical seeds will produce identical sequences of
         seed values as their generate() methods are called repeatedly.

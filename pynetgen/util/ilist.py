@@ -1,7 +1,7 @@
 """List-like object for use in NETGEN.
 
-This submodule submodule defines a minor modification of a list called an
-"index list", as described in the original C implementation of NETGEN.
+This submodule defines a minor modification of a list called an "index list",
+as described in the original C implementation of NETGEN.
 """
 
 #=============================================================================
@@ -48,18 +48,20 @@ class IndexList(list):
 
         else:
 
-            # Otherwise verify bounds
+            # Otherwise verify that bounds are numeric
             try:
                 a = int(a)
                 b = int(b)
-                if b < a:
-                    raise ValueError("index list bounds must satisfy b >= a")
-
-                # If bounds are valid, initialize a list from a range
-                super().__init__(range(a, b+1))
-                self._pseudo_size = super().__len__()
             except (TypeError, ValueError):
                 raise TypeError("index list bounds must be integer")
+            
+            # Verify that bound values are valid
+            if b < a:
+                raise ValueError("index list bounds must satisfy b >= a")
+            
+            # If bounds are valid, initialize a list from a range
+            super().__init__(range(a, b+1))
+            self._pseudo_size = super().__len__()
 
     #-------------------------------------------------------------------------
 
@@ -81,15 +83,12 @@ class IndexList(list):
         self._pseudo_size -= 1
 
         # Attempt to pop the specified element
-        elem = 0
         try:
             # Pop element if valid
-            elem = super().pop(index)
+            return super().pop(index)
         except IndexError:
-            # Leave element 0 if not
-            pass
-
-        return elem
+            # Return 0 if not
+            return 0
 
     # Aliases
     choose_index = pop

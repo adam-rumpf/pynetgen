@@ -1,8 +1,22 @@
-"""Main PyNETGEN module.
+"""The main PyNETGEN module.
 
 This file contains the main driver functions for the PyNETGEN procedures,
 which are handled using the classes defined in the submodules.
 """
+
+def main():
+    """The main driver for use when PyNETGEN is called from the console.
+    
+    This function is called when the main pynetgen.py file is executed as a
+    script, or when it is called from the console using:
+        $ pynetgen [args]
+    
+    This function attempts to parse any included command line arguments and
+    then calls the main network generation function.
+    """
+    
+    ###
+    pass
 
 def generate(seed=1, problem=0, nodes=10, sources=3, sinks=3, density=30,
              mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
@@ -27,9 +41,13 @@ def generate(seed=1, problem=0, nodes=10, sources=3, sinks=3, density=30,
     maxcap -- maximum arc capacity (default 1000)
     """
 
+    ### add support to choose an output file (default cwd)
     pass
 
 if __name__ == "__main__":
+    # Run main script to parse command line arguments and generate a network
+    main()
+    
     ### Temporary demo code
     import util.random
     rando = util.random.RandomIterator(1, True)
