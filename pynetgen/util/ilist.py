@@ -18,6 +18,9 @@ class IndexList(list):
     a bug in the initial description of NETGEN.
 
     This version is implemented as a subclass of Python's built-in list class.
+    Be aware that the behavior of this class is not defined for methods other
+    than those required by NETGEN, which include:
+        __init__, pop
     """
 
     #-------------------------------------------------------------------------
@@ -41,7 +44,7 @@ class IndexList(list):
 
             # If missing a bound, initialize an empty list
             super().__init__()
-            self.pseudo_size = 0
+            self._pseudo_size = 0
 
         else:
 
@@ -54,15 +57,59 @@ class IndexList(list):
 
                 # If bounds are valid, initialize a list from a range
                 super().__init__(range(a, b+1))
-                self.pseudo_size = b - a + 1
-            except TypeError:
-                raise TypeError("index list bounds must be integer")
-            except ValueError:
+                self._pseudo_size = super().__len__()
+            except (TypeError, ValueError):
                 raise TypeError("index list bounds must be integer")
 
-### "Index list": ascending sequence of positive integers with the following operations:
-### make_index_list() - makes a list of consecutive integers
-### choose_index() - removes the kth element and removes it
-### remove_index() - removes the kth index
-### index_size() - returns number of stored elements
-### pseudo_size() - (technical)
+    #-------------------------------------------------------------------------
+
+    def pop(self, index=-1):
+        """Removes and returns an item at a given index.
+
+        Keyword arguments:
+        index -- index of the element to remove (default last)
+
+        The index list behavior of this class is mostly unchanged from that of
+        lists, except that it returns 0 rather than raising an exception when
+        an invalid index is chosen, and calling it always reduces the pseudo
+        size.
+
+        Aliases: pop, choose_index, remove_index
+        """
+
+        # Decrement pseudo size
+        self._pseudo_size -= 1
+
+        # Attempt to pop the specified element
+        elem = 0
+        try:
+            # Pop element if valid
+            elem = super().pop(index)
+        except IndexError:
+            # Leave element 0 if not
+            pass
+
+        return elem
+
+    # Aliases
+    choose_index = pop
+    remove_index = pop
+
+    #-------------------------------------------------------------------------
+
+    @property
+    def pseudo_size(self):
+        """Pseudo size attribute required by NETGEN.
+
+        The index list's pseudo size is usually simply equal to its length,
+        but it decrements whenever an attempt is made to remove an element
+        from the list, regardless of whether the attempt was successful.
+
+        The pseudo size is prohibited from decreasing below 0.
+        """
+
+        return max(self._pseudo_size, 0)
+
+    @pseudo_size.setter
+    def pseudo_size(self, num):
+        self._pseudo_size = num

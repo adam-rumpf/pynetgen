@@ -41,6 +41,14 @@ if __name__ == "__main__":
         print(randy.generate(1, 100))
     print('-'*20)
     import util.ilist
-    mylist = util.ilist.IndexList(1, "a")
-    mylist.append(5)
+    mylist = util.ilist.IndexList(1, 8)
     print(mylist)
+    print(len(mylist))
+    print(mylist.pseudo_size)
+    temp = mylist.choose_index(2)
+    print(temp)
+    print(mylist)
+    print(mylist.pseudo_size)
+    for i in range(20):
+        mylist.pop()
+    print(mylist.pseudo_size)
