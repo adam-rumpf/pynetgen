@@ -39,3 +39,8 @@ if __name__ == "__main__":
     randy = util.random.RandomIterator(1, False)
     for i in range(10):
         print(randy.generate(1, 100))
+    print('-'*20)
+    import util.ilist
+    mylist = util.ilist.IndexList(1, "a")
+    mylist.append(5)
+    print(mylist)
