@@ -1,2 +1,0 @@
-# pynetgen/
-# Main PyNETGEN module.
