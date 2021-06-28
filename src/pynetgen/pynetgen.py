@@ -41,32 +41,8 @@ def generate(seed=1, problem=0, nodes=10, sources=3, sinks=3, density=30,
     maxcap -- maximum arc capacity (default 1000)
     """
 
-    ### add support to choose an output file (default cwd)
     pass
 
 if __name__ == "__main__":
     # Run main script to parse command line arguments and generate a network
     main()
-    
-    ### Temporary demo code
-    import util.random
-    rando = util.random.RandomIterator(1, True)
-    for i in range(10):
-        print(rando.generate(1, 100))
-    print('-'*20)
-    randy = util.random.RandomIterator(1, False)
-    for i in range(10):
-        print(randy.generate(1, 100))
-    print('-'*20)
-    import util.ilist
-    mylist = util.ilist.IndexList(1, 8)
-    print(mylist)
-    print(len(mylist))
-    print(mylist.pseudo_size)
-    temp = mylist.choose_index(2)
-    print(temp)
-    print(mylist)
-    print(mylist.pseudo_size)
-    for i in range(20):
-        mylist.pop()
-    print(mylist.pseudo_size)
