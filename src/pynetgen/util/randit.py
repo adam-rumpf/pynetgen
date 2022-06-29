@@ -1,4 +1,4 @@
-"""Tools for generating pseudorandom integers.
+"""Tools for iteratively generating pseudorandom integers.
 
 This submodule defines classes for generating sequences of pseudorandom
 numbers. The NetgenRandom class uses the random number generator from the
@@ -40,7 +40,6 @@ class StandardRandom:
 
         # Set attributes
         self.set_seed(seed=seed)
-        self.previous = self.seed # previously-generated value
 
     #-------------------------------------------------------------------------
 
@@ -66,6 +65,7 @@ class StandardRandom:
         """Resets the previously-generated value to equal the seed."""
 
         self.previous = self.seed
+        random.seed(self.seed)
 
     #-------------------------------------------------------------------------
 
