@@ -79,8 +79,9 @@ class IndexList(list):
         Aliases: pop, choose_index, remove_index
         """
 
-        # Decrement pseudo size
-        self._pseudo_size -= 1
+        # Decrement pseudo size (unless already zero)
+        if self._pseudo_size > 0:
+            self._pseudo_size -= 1
 
         # Attempt to pop the specified element
         try:
