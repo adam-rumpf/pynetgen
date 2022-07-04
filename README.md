@@ -10,8 +10,8 @@ PyNETGEN is a Python implementation of NETGEN, a random network flows problem in
 
 > D. Klingman, A. Napier, and J. Stutz. NETGEN: A Program for generating large scale capacitated assignment, transportation, and minimum cost flow network problems. _Management Science_, 20(5):814-821, 1974. [doi:10.1287/mnsc.20.5.814](https://doi.org/10.1287/mnsc.20.5.814).
 
-This package is based on a [C implementation](https://lemon.cs.elte.hu/trac/lemon/browser/lemon-benchmark/generators/netgen) of NETGEN by Norbert Schlenker (1989). The original implementation was used to generate random minimum-cost flow, maximum flow, and assignment problems, exported in a standardized text file format.
+This package is based on a [C implementation](https://lemon.cs.elte.hu/trac/lemon/browser/lemon-benchmark/generators/netgen) of NETGEN by Norbert Schlenker (1989). The original implementation was used to generate random minimum-cost flow, maximum flow, and assignment problems, exported in [DIMACS graph format](http://dimacs.rutgers.edu/archive/Challenges/).
 
 ## Project Status
 
-This is a work in progress. It currently includes only a few necessary submodules, and is not yet release-ready.
+This is a work in progress. It currently includes only a few necessary submodules and some of the overall framework, and it is not yet release-ready.
