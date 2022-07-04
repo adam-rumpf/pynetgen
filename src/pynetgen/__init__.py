@@ -14,5 +14,5 @@ flow, maximum flow, and assignment problems, exported in a DIMACS graph
 format.
 """
 
-from ._version import __author__, __version__
-from . import pynetgen
+from ._version import __author__, __version__, _author_email, _copyright_year
+from .pynetgen import *

@@ -14,4 +14,4 @@ This package is based on a [C implementation](https://lemon.cs.elte.hu/trac/lemo
 
 ## Project Status
 
-This is a work in progress. It currently includes only a few necessary submodules, and is not yet release-ready.
+This is a work in progress. It currently includes only a few necessary submodules and some of the overall framework, and it is not yet release-ready.
