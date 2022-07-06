@@ -20,42 +20,27 @@ desc = "Scripts for generating random flow networks in DIMACS format."
 vers = ("PyNETGEN v" + __version__ + "\nCopyright (c) " + _copyright_year
             + " " + __author__ + "\n" + _author_email)
 epil = """
-PyNETGEN is a Python implementation of NETGEN, a random network flows problem
-instance generator defined in Klingman, Napier, and Stutz 1974
-(doi:10.1287/mnsc.20.5.814). The original NETGEN script, along with its
-pseudorandom number generator, is included along with some other types of
-random network scripts. PyNETGEN is based primarily on a C implementation of
-NETGEN (copyright (c) 1989 Norbert Schlenker).
-
-This shell script generates random network flows problem instances, exported in
-DIMACS graph format <http://dimacs.rutgers.edu/archive/Challenges/>.
-
-The "method" argument specifies the network generation method. Choices include:
+This shell script generates random network flows problem instances exported in
+DIMACS graph format <http://dimacs.rutgers.edu/archive/Challenges/>. The
+"method" argument specifies the network generation method. Choices include:
     netgen
     grid
 
 For detailed instructions for these methods, use one of the following commands:
 $ pynetgen netgen help
 $ pynetgen grid help
+
+The "netgen" option is a Python implementation of NETGEN, a random network
+flows problem instance generator defined in Klingman, Napier, and Stutz 1974
+(doi:10.1287/mnsc.20.5.814). The original NETGEN script, along with its
+pseudorandom number generator, is included along with some other types of
+random network scripts. PyNETGEN is based primarily on a C implementation of
+NETGEN (copyright (c) 1989 Norbert Schlenker).
 """
 netgen_instructions = """
 usage: pynetgen.py [-f [FILE]] netgen [ARGS ...]
 
-NETGEN is a standard network flows problem instance generator defined in:
-
-    D. Klingman, A. Napier, and J. Stutz. NETGEN: A Program for generating
-    large scale capacitated assignment, transportation, and minimum cost flow
-    network problems. Management Science, 20(5):814-821, 1974.
-    doi:10.1287/mnsc.20.5.814.
-
-By default the resulting problem instance is a minimum-cost flow problem.
-Transportation and maximum flow problems can also be generated, and are
-implicitly chosen according to the network parameters.
-
-The resulting problem instance is a transportation problem if the total number
-of sources and sinks equals the total number of nodes, and if there are no
-transshipment sources or sinks. It is a maximum flow problem if it is not an
-assignment problem and the min/max costs are both set to 1.
+An implementation of the NETGEN network flows problem instance generator.
 
 The command line arguments for the NETGEN script are as follows (in order):
     seed -- random number generator seed (default 1; -1 for random)
@@ -76,8 +61,25 @@ The command line arguments for the NETGEN script are as follows (in order):
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
 
-With the exception of the final "rng" argument, these are identical to the
-original C implementation's command line arguments.
+NETGEN is a standard network flows problem instance generator defined in:
+
+    D. Klingman, A. Napier, and J. Stutz. NETGEN: A Program for generating
+    large scale capacitated assignment, transportation, and minimum cost flow
+    network problems. Management Science, 20(5):814-821, 1974.
+    doi:10.1287/mnsc.20.5.814.
+
+With the exception of the final "rng" argument and the optional file tag, the
+command line arguments of this script are identical to those of the original C
+implementation.
+
+By default the resulting problem instance is a minimum-cost flow problem.
+Transportation and maximum flow problems can also be generated, and are
+implicitly chosen according to the network parameters.
+
+The resulting problem instance is a transportation problem if the total number
+of sources and sinks equals the total number of nodes, and if there are no
+transshipment sources or sinks. It is a maximum flow problem if it is not an
+assignment problem and the min/max costs are both set to 1.
 
 Skeleton arcs are part of NETGEN's process for generated minimum-cost flow
 problems, and are included to ensure feasibility. They are a subset of arcs
@@ -87,17 +89,9 @@ are chosen to receive the maximum possible cost in order to discourage
 uninteresting solutions that use only the skeleton arcs.
 """
 grid_instructions = """
-usage: pynetgen.py [-f [FILE]] grid [args]
+usage: pynetgen.py [-f [FILE]] grid [ARGS ...]
 
-This is a simple network flows problem instance generator that uses a
-grid-based network. The network consists of a square grid of nodes, with a
-master source on one side feeding into all rows, and a master sink on the other
-side extracting from all rows.
-
-By default the resulting problem instance is a minimum-cost flow problem. A
-maximum flow problem is generated if the minimum and maximum arc costs are both
-set equal to 1. Transshipment sources and sinks are not included, and
-transportation problems cannot be generated.
+A grid-based network flows problem instance generator.
 
 The command line arguments for the grid-based method are as follows (in order):
     seed -- random number generator seed (default 1; -1 for random)
@@ -117,6 +111,16 @@ The command line arguments for the grid-based method are as follows (in order):
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+
+This is a simple network flows problem instance generator that uses a
+grid-based network. The network consists of a square grid of nodes, with a
+master source on one side feeding into all rows, and a master sink on the other
+side extracting from all rows.
+
+By default the resulting problem instance is a minimum-cost flow problem. A
+maximum flow problem is generated if the minimum and maximum arc costs are both
+set equal to 1. Transshipment sources and sinks are not included, and
+transportation problems cannot be generated.
 
 The master source is located on the West side while the master sink is located
 on the East side. All transshipment arcs feed into their immediate neighbors to
@@ -170,16 +174,32 @@ def main():
     # If a method is selected, call its function with the other arguments
     if len(arg_list) > 0:
         if arg_list[0] == "netgen":
-            netgen_generate(*arg_list[1:])
+            try:
+                netgen_generate(*arg_list[1:])
+            except TypeError:
+                print("Too many arguments supplied for NETGEN algorithm. " +
+                      "Run\n$ pynetgen netgen help\nfor usage notes.")
             return None
         if arg_list[0] == "grid":
-            grid_generate(*arg_list[1:])
+            try:
+                grid_generate(*arg_list[1:])
+            except TypeError:
+                print("Too many arguments supplied for grid network " +
+                      "algorithm. Run\n$ pynetgen grid help\nfor usage notes.")
             return None
 
 #-----------------------------------------------------------------------------
 
-def netgen_generate(*args):
-    """The main NETGEN random network generation function.
+def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
+                    mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
+                    hicost=0, capacitated=100, mincap=100, maxcap=1000,
+                    rng=0):
+    """
+    netgen_generate([seed][, nodes][, sources][, sinks][, density][, ...
+                    mincost][, maxcost][, supply][, tsources][, tsinks][, ...
+                    hicost][, capacitated][, mincap][, maxcap][, rng])
+    
+    The main NETGEN random network generation function.
 
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
@@ -222,14 +242,25 @@ def netgen_generate(*args):
     """
     
     # Initialize the network generation object
-    ###NetworkGenerator = NetgenNetworkGenerator(*args)
+    ###
+#    NetworkGenerator = NetgenNetworkGenerator(seed=seed, nodes=nodes,
+#        sources=sources, sinks=sinks, density=density, mincost=mincost,
+#        maxcost=maxcost, supply=supply, tsources=tsources, tsinks=tsinks,
+#        hicost=hicost, capacitated=capacitated, mincap=mincap, maxcap=maxcap,
+#        rng=rng)
 
     pass
 
 #-----------------------------------------------------------------------------
 
-def grid_generate(*args):
-    """A grid-based random network generation function.
+def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
+                 wrap=0, mincost=10, maxcost=99, supply=1000, hicost=0,
+                 capacitated=100, mincap=100, maxcap=1000, rng=0):
+    """grid_generate([seed][, rows][, columns][, diagonal][, reverse][, ...
+                     wrap][, mincost][, maxcost][, supply][, hicost][, ...
+                     capacitated][, mincap][, maxcap][, rng])
+    
+    A grid-based random network generation function.
     
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
@@ -277,8 +308,11 @@ def grid_generate(*args):
     ranges.
     """
     
-    # Initialize the network generation object
-    NetworkGenerator = GridNetworkGenerator(*args)
+    # Initialize network generation object
+    NetworkGenerator = GridNetworkGenerator(seed=seed, rows=rows,
+        columns=columns, diagonal=diagonal, reverse=reverse, wrap=wrap,
+        mincost=mincost, maxcost=maxcost, supply=supply, hicost=hicost,
+        capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng)
     
     ###
 
