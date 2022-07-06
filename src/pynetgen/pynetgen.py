@@ -10,11 +10,12 @@ from the command line using the "pynetgen" shell script. For help, use:
     $ pynetgen --help
 """
 
+from ._version import __author__, __version__, _author_email, _copyright_year
+from pynetgen.gen.grid import GridNetworkGenerator
+
 ###
-if __name__ == "__main__":
-    from _version import __author__, __version__, _author_email, _copyright_year
-else:
-    from ._version import __author__, __version__, _author_email, _copyright_year
+test = GridNetworkGenerator()
+###
 
 import argparse
 
@@ -165,6 +166,7 @@ def main():
             return None
 
     ###
+    ### parse arguments, cast as integer
 
 def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
                     mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
