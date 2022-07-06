@@ -13,10 +13,6 @@ from the command line using the "pynetgen" shell script. For help, use:
 from ._version import __author__, __version__, _author_email, _copyright_year
 from pynetgen.gen.grid import GridNetworkGenerator
 
-###
-test = GridNetworkGenerator()
-###
-
 import argparse
 
 # Define help strings
@@ -35,8 +31,12 @@ This shell script generates random network flows problem instances, exported in
 DIMACS graph format <http://dimacs.rutgers.edu/archive/Challenges/>.
 
 The "method" argument specifies the network generation method. Choices include:
-    netgen (run '$ pynetgen netgen help' for details)
-    grid (run '$ pynetgen grid help' for details)
+    netgen
+    grid
+
+For detailed instructions for these methods, use one of the following commands:
+$ pynetgen netgen help
+$ pynetgen grid help
 """
 netgen_instructions = """
 usage: pynetgen.py [-f [FILE]] netgen [ARGS ...]
@@ -133,6 +133,8 @@ of them are chosen to receive the maximum possible cost in order to discourage
 uninteresting solutions that use only the skeleton arcs.
 """
 
+#=============================================================================
+
 def main():
     """The main driver for use when PyNETGEN is called from the console.
     
@@ -155,7 +157,7 @@ def main():
     
     args = parser.parse_args()
     arg_list = args.arg_list
-
+    
     # Display method-specific help messages if requested
     if len(arg_list) > 1:
         if arg_list[0] == "netgen" and arg_list[1] == "help":
@@ -165,12 +167,18 @@ def main():
             print(grid_instructions)
             return None
 
-    ###
-    ### parse arguments, cast as integer
+    # If a method is selected, call its function with the other arguments
+    if len(arg_list) > 0:
+        if arg_list[0] == "netgen":
+            netgen_generate(*arg_list[1:])
+            return None
+        if arg_list[0] == "grid":
+            grid_generate(*arg_list[1:])
+            return None
 
-def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
-                    mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
-                    hicost=0, capacitated=100, mincap=100, maxcap=1000, rng=0):
+#-----------------------------------------------------------------------------
+
+def netgen_generate(*args):
     """The main NETGEN random network generation function.
 
     Keyword arguments:
@@ -212,12 +220,15 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
     Arc costs and capacities are drawn uniformly at random from the specified
     ranges.
     """
+    
+    # Initialize the network generation object
+    ###NetworkGenerator = NetgenNetworkGenerator(*args)
 
     pass
 
-def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1, wrap=0,
-                  mincost=10, maxcost=99, supply=1000, hicost=0,
-                  capacitated=100, mincap=100, maxcap=1000, rng=0):
+#-----------------------------------------------------------------------------
+
+def grid_generate(*args):
     """A grid-based random network generation function.
     
     Keyword arguments:
@@ -266,8 +277,18 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1, wrap=0,
     ranges.
     """
     
-    pass
+    # Initialize the network generation object
+    NetworkGenerator = GridNetworkGenerator(*args)
+    
+    ###
+
+#-----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     # Run main script to parse command line arguments and generate a network
     main()
+
+###
+###test = GridNetworkGenerator()
+###
+main()
