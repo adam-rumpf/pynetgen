@@ -12,6 +12,7 @@ from the command line using the "pynetgen" shell script. For help, use:
 
 from ._version import __author__, __version__, _author_email, _copyright_year
 from pynetgen.gen.grid import GridNetworkGenerator
+from pynetgen.gen.netgen import NetgenNetworkGenerator
 
 import argparse
 
@@ -242,14 +243,13 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
     """
     
     # Initialize the network generation object
-    ###
-#    NetworkGenerator = NetgenNetworkGenerator(seed=seed, nodes=nodes,
-#        sources=sources, sinks=sinks, density=density, mincost=mincost,
-#        maxcost=maxcost, supply=supply, tsources=tsources, tsinks=tsinks,
-#        hicost=hicost, capacitated=capacitated, mincap=mincap, maxcap=maxcap,
-#        rng=rng)
+    NetworkGenerator = NetgenNetworkGenerator(seed=seed, nodes=nodes,
+        sources=sources, sinks=sinks, density=density, mincost=mincost,
+        maxcost=maxcost, supply=supply, tsources=tsources, tsinks=tsinks,
+        hicost=hicost, capacitated=capacitated, mincap=mincap, maxcap=maxcap,
+        rng=rng)
 
-    pass
+    ###
 
 #-----------------------------------------------------------------------------
 
