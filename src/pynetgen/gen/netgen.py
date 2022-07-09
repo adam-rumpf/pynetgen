@@ -47,64 +47,102 @@ class NetgenNetworkGenerator:
         """
         
         # Validate inputs and convert to correct data types
-        seed = int(seed)
-        nodes = int(nodes)
-        if nodes < 0:
+        self.seed = int(seed)
+        self.nodes = int(nodes)
+        if self.nodes < 0:
             raise ValueError("node count must be nonnegative")
-        sources = int(sources)
-        if sources < 0:
+        self.sources = int(sources)
+        if self.sources < 0:
             raise ValueError("source count must be nonnegative")
-        sinks = int(sinks)
-        if sinks < 0:
+        self.sinks = int(sinks)
+        if self.sinks < 0:
             raise ValueError("sink count must be nonnegative")
-        if sources + sinks > nodes:
+        if self.sources + self.sinks > self.nodes:
             raise ValueError("source/sink count cannot exceed node count")
-        density = int(density)
-        if density < 1:
+        self.density = int(density)
+        if self.density < 1:
             raise ValueError("arc count must be nonnegative")
-        if nodes > density:
+        if self.nodes > self.density:
             raise ValueError("node count must exceed arc count")
-        mincost = float(mincost)
-        maxcost = float(maxcost)
-        if mincost > maxcost:
+        self.mincost = float(mincost)
+        self.maxcost = float(maxcost)
+        if self.mincost > self.maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        supply = float(supply)
-        tsources = int(tsources)
-        if tsources < 0:
+        self.supply = float(supply)
+        self.tsources = int(tsources)
+        if self.tsources < 0:
             raise ValueError("transshipment source count must be nonnegative")
-        if tsources > sources:
+        if self.tsources > self.sources:
             raise ValueError("transshipment sources cannot exceed sources")
-        tsinks = int(tsinks)
-        if tsinks < 0:
+        self.tsinks = int(tsinks)
+        if self.tsinks < 0:
             raise ValueError("transshipment sink count must be nonnegative")
-        if tsinks > sinks:
+        if self.tsinks > self.sinks:
             raise ValueError("transshipment sinks cannot exceed sinks")
-        hicost = float(hicost)/100 # convert percent into fraction
-        if hicost < 0 or hicost > 1:
+        self.hicost = float(hicost)/100 # convert percent into fraction
+        if self.hicost < 0 or self.hicost > 1:
             raise ValueError("high cost percentage must be in [0,100]")
-        capacitated = float(capacitated)/100 # convert percent into fraction
-        if capacitated < 0 or capacitated > 1:
+        self.capacitated = float(capacitated)/100 # convert percent into fraction
+        if self.capacitated < 0 or self.capacitated > 1:
             raise ValueError("capacitated percentage must be in [0,100]")
-        mincap = float(mincap)
-        maxcap = float(maxcap)
-        if mincap > maxcap:
+        self.mincap = float(mincap)
+        self.maxcap = float(maxcap)
+        if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
         
         # Initialize random number generation object
         if rng == 0:
-            Rng = NetgenRandom(seed)
+            self.Rng = NetgenRandom(seed)
         elif rng == 1:
-            Rng = StandardRandom(seed)
+            self.Rng = StandardRandom(seed)
         else:
             raise ValueError("RNG index must be 0 or 1")
         
         # Initialize attributes for temporary storage
         self._arc_count = 0 # number of arcs generated so far
         self._nodes_left = nodes - sinks + tsinks # nodes left to generate
+        self.b = [0 for i in range(nodes)] # node supply values
+        
+        # Determine which type of problem to generate
+        if ((self.sources - self.tsources + self.sinks - self.tsinks ==
+            self.nodes) and sources - tsources == sinks - tsinks and
+            sources == supply):
+            self._create_assignment()
+        elif mincap == 1.0 and maxcap == 1.0:
+            self._create_problem(maxflow=True)
+        else:
+            self._create_problem(maxflow=False)
+    
+    #-------------------------------------------------------------------------
+    
+    def _create_problem(self, maxflow=False):
+        """Generates a min-cost flow or max-flow problem.
+        
+        Keyword arguments:
+        maxflow -- True for a max flow problem, False for min-cost flow
+            (default False)
+        """
+        
+        pass###
+    
+    #-------------------------------------------------------------------------
+    
+    def _create_assignment(self):
+        """Generates an assignment problem."""
         
         ###
-        print([seed, nodes, sources, sinks, density,
-                    mincost, maxcost, supply, tsources, tsinks,
-                    hicost, capacitated, mincap, maxcap, rng])
-        print(Rng.generate(0, 100))
+        print("Assignment problem")###
+    
+    #-------------------------------------------------------------------------
+    
+    def _create_supply(self):
+        """Sets supply values of all nodes."""
+        
+        supply_per_source = self.supply/self.sources
+        for i in range(self.sources):
+            partial_supply = Rng.generate(1, supply_per_source)
+            self.b[i] += partial_supply
+            self.b[Rng.generate(0, self.sources-1)] += (supply_per_source -
+                                                        partial_supply)
+        self.b[Rng.generate(0, self.sources-1)] += self.supply % self.sources
