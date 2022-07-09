@@ -175,18 +175,16 @@ def main():
     # If a method is selected, call its function with the other arguments
     if len(arg_list) > 0:
         if arg_list[0] == "netgen":
-            try:
-                netgen_generate(*arg_list[1:])
-            except TypeError:
-                print("Too many arguments supplied for NETGEN algorithm. " +
-                      "Run\n$ pynetgen netgen help\nfor usage notes.")
+            # NETGEN requires 0-15 arguments
+            if len(arg_list) > 15:
+                raise TypeError("NETGEN requires 0-15 arguments")
+            netgen_generate(*arg_list[1:])
             return None
         if arg_list[0] == "grid":
-            try:
-                grid_generate(*arg_list[1:])
-            except TypeError:
-                print("Too many arguments supplied for grid network " +
-                      "algorithm. Run\n$ pynetgen grid help\nfor usage notes.")
+            # The grid algorithm requires 0-14 argumets
+            if len(arg_list) > 14:
+                raise TypeError("grid algorithm requires 0-14 arguments")
+            grid_generate(*arg_list[1:])
             return None
 
 #-----------------------------------------------------------------------------
