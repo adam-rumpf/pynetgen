@@ -64,11 +64,11 @@ class NetgenNetworkGenerator:
             raise ValueError("arc count must be nonnegative")
         if self.nodes > self.density:
             raise ValueError("node count must exceed arc count")
-        self.mincost = float(mincost)
-        self.maxcost = float(maxcost)
+        self.mincost = int(mincost)
+        self.maxcost = int(maxcost)
         if self.mincost > self.maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        self.supply = float(supply)
+        self.supply = int(supply)
         self.tsources = int(tsources)
         if self.tsources < 0:
             raise ValueError("transshipment source count must be nonnegative")
@@ -79,14 +79,14 @@ class NetgenNetworkGenerator:
             raise ValueError("transshipment sink count must be nonnegative")
         if self.tsinks > self.sinks:
             raise ValueError("transshipment sinks cannot exceed sinks")
-        self.hicost = float(hicost)/100 # convert percent into fraction
+        self.hicost = int(hicost)/100 # convert percent into fraction
         if self.hicost < 0 or self.hicost > 1:
             raise ValueError("high cost percentage must be in [0,100]")
-        self.capacitated = float(capacitated)/100 # convert percent into fraction
+        self.capacitated = int(capacitated)/100 # convert percent into fraction
         if self.capacitated < 0 or self.capacitated > 1:
             raise ValueError("capacitated percentage must be in [0,100]")
-        self.mincap = float(mincap)
-        self.maxcap = float(maxcap)
+        self.mincap = int(mincap)
+        self.maxcap = int(maxcap)
         if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
@@ -102,7 +102,6 @@ class NetgenNetworkGenerator:
         # Initialize attributes for temporary storage
         self._arc_count = 0 # number of arcs generated so far
         self._nodes_left = nodes - sinks + tsinks # nodes left to generate
-        self.b = [0 for i in range(nodes)] # node supply values
         
         # Determine which type of problem to generate
         if ((self.sources - self.tsources + self.sinks - self.tsinks ==
@@ -124,7 +123,12 @@ class NetgenNetworkGenerator:
             (default False)
         """
         
-        pass###
+        # Set supply values
+        self.b = [0 for i in range(self.nodes)] # node supply values
+        self._create_supply()
+        print(self.b)###
+        
+        ###
     
     #-------------------------------------------------------------------------
     
@@ -139,10 +143,11 @@ class NetgenNetworkGenerator:
     def _create_supply(self):
         """Sets supply values of all nodes."""
         
-        supply_per_source = self.supply/self.sources
+        supply_per_source = int(self.supply/self.sources)
         for i in range(self.sources):
-            partial_supply = Rng.generate(1, supply_per_source)
+            partial_supply = self.Rng.generate(1, supply_per_source)
             self.b[i] += partial_supply
-            self.b[Rng.generate(0, self.sources-1)] += (supply_per_source -
-                                                        partial_supply)
-        self.b[Rng.generate(0, self.sources-1)] += self.supply % self.sources
+            self.b[self.Rng.generate(0, self.sources-1)] += (supply_per_source
+                                                             - partial_supply)
+        self.b[self.Rng.generate(0, self.sources-1)] += (self.supply %
+                                                         self.sources)

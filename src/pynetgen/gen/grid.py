@@ -57,19 +57,19 @@ class GridNetworkGenerator:
         diagonal = bool(int(diagonal))
         reverse = bool(int(reverse))
         wrap = bool(int(wrap))
-        mincost = float(mincost)
-        maxcost = float(maxcost)
+        mincost = int(mincost)
+        maxcost = int(maxcost)
         if mincost > maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        supply = float(supply)
-        hicost = float(hicost)/100 # convert percent into fraction
+        supply = int(supply)
+        hicost = int(hicost)/100 # convert percent into fraction
         if hicost < 0 or hicost > 1:
             raise ValueError("high cost percentage must be in [0,100]")
-        capacitated = float(capacitated)/100 # convert percent into fraction
+        capacitated = int(capacitated)/100 # convert percent into fraction
         if capacitated < 0 or capacitated > 1:
             raise ValueError("capacitated percentage must be in [0,100]")
-        mincap = float(mincap)
-        maxcap = float(maxcap)
+        mincap = int(mincap)
+        maxcap = int(maxcap)
         if mincap > maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
