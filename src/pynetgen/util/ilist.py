@@ -66,34 +66,34 @@ class IndexList(list):
     #-------------------------------------------------------------------------
 
     def pop(self, index=-1):
-        """Removes and returns an item at a given index.
+        """Removes and returns an item at a given index (starting from 1).
 
         Keyword arguments:
         index -- index of the element to remove (default last)
 
         The index list behavior of this class is mostly unchanged from that of
-        lists, except that it returns 0 rather than raising an exception when
-        an invalid index is chosen, and calling it always reduces the pseudo
-        size.
+        lists, except that it returns 0 when the specified index is 0 or
+        invalid. A successful call decrements the pseudo size.
+        
+        Note that this list is indexed from 1, so the first index is 1 and
+        the last is equal to the length of the list.
 
-        Aliases: pop, choose_index, remove_index
+        Aliases: pop, choose_index
         """
 
-        # Decrement pseudo size (unless already zero)
-        if self._pseudo_size > 0:
-            self._pseudo_size -= 1
-
         # Attempt to pop the specified element
-        try:
-            # Pop element if valid
-            return super().pop(index)
-        except IndexError:
-            # Return 0 if not
+        if index < 1 or index > super().__len__():
+            # Return 0 for an invalid index
             return 0
+        else:
+            # Decrement pseudo size (unless already zero)
+            if self._pseudo_size > 0:
+                self._pseudo_size -= 1
+            # Otherwise pop the specified index (offset by 1)
+            return super().pop(index-1)
 
     # Aliases
     choose_index = pop
-    remove_index = pop
 
     #-------------------------------------------------------------------------
 
