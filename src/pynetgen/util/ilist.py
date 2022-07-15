@@ -20,7 +20,7 @@ class IndexList(list):
     This version is implemented as a subclass of Python's built-in list class.
     Be aware that the behavior of this class is not defined for methods other
     than those required by NETGEN, which include:
-        __init__, pop
+        __init__, pop, remove
     """
 
     #-------------------------------------------------------------------------
@@ -77,7 +77,7 @@ class IndexList(list):
         
         Note that this list is indexed from 1, so the first index is 1 and
         the last is equal to the length of the list.
-
+        
         Aliases: pop, choose_index
         """
 
@@ -91,9 +91,35 @@ class IndexList(list):
                 self._pseudo_size -= 1
             # Otherwise pop the specified index (offset by 1)
             return super().pop(index-1)
-
-    # Aliases
+    
+    # Define aliases
     choose_index = pop
+    
+    #-------------------------------------------------------------------------
+
+    def remove(self, index):
+        """Attempts to remove a specified element from the list.
+
+        Positional arguments:
+        index -- value of element to attempt to remove
+
+        Calling this method always reduces the list's pseudo size by 1. If the
+        specified value is invalid, no error is thrown.
+        
+        Aliases: remove, remove_index
+        """
+
+        # Reduce the pseudo size
+        self.pseudo_size -= 1
+        
+        # Attempt to remove the specified element
+        try:
+            super().remove(index)
+        except ValueError:
+            pass
+    
+    # Define aliases
+    remove_index = remove
 
     #-------------------------------------------------------------------------
 
