@@ -244,6 +244,40 @@ class NetgenNetworkGenerator:
                 print(sinks)###
             
             del IndList
+            
+            # Distribute supply among the selected sinks
+            chain_length = sort_count
+            supply_per_sink = self.b[source-1]//sinks_per_source
+            print("Supply per sink: " + str(supply_per_sink) + "\n")###
+            k = pred[source]
+            print("Processing node " + str(k))###
+            for i in range(sinks_per_source):
+                sort_count += 1
+                print(sort_count)###
+                partial_supply = self.Rng.generate(1, supply_per_sink)
+                print(partial_supply)###
+                j = self.Rng.generate(0, sinks_per_source - 1)
+                print(j)###
+                tail[sort_count] = k
+                head[sort_count] = sinks[i] + 1
+                print("(" + str(tail[sort_count]) + "," + str(head[sort_count]) + ")")
+                self.b[sinks[i]] -= partial_supply
+                self.b[sinks[j]] -= supply_per_sink - partial_supply
+                print(self.b)###
+                for j in range(self.Rng.generate(1, chain_length), 0, -1):
+                    k = pred[k]
+                    print("Processing node " + str(k))###
+            self.b[sinks[0]] -= self.b[source-1] % sinks_per_source
+            print("\nB: " + str(self.b) + "\n")###
+            
+            # Sort skeleton arcs into a canonical order
+            print("Pre-sort tails/heads:")###
+            print(tail)###
+            print(head)###
+            self._sort_skeleton(sort_count, tail, head)
+            print("Post-sort tails/heads:")###
+            print(tail)###
+            print(head)###
         
         ###
     
@@ -272,3 +306,24 @@ class NetgenNetworkGenerator:
         ###
         print("b[], after create_supply()")
         print(self.b)
+    
+    #-------------------------------------------------------------------------
+    
+    def _sort_skeleton(self, sort_count, tail, head):
+        """Conduct a shell sort of a portion of the skeleton arcs by tail."""
+        
+        m = sort_count
+        print(sort_count)###
+        m //= 2
+        while m != 0:
+            print("!")###
+            k = sort_count - m
+            for j in range(1, k+1):
+                print("?")###
+                i = j
+                while i >= 1 and tail[i] > tail[i+m]:
+                    print(f"({i},{j},{k}")###
+                    tail[i], tail[i+m] = tail[i+m], tail[i]
+                    head[i], head[i+m] = head[i+m], head[i]
+                    i -= m
+            m //= 2
