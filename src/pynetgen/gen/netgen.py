@@ -79,10 +79,10 @@ class NetgenNetworkGenerator:
             raise ValueError("transshipment sink count must be nonnegative")
         if self.tsinks > self.sinks:
             raise ValueError("transshipment sinks cannot exceed sinks")
-        self.hicost = int(hicost)/100 # convert percent into fraction
+        self.hicost = int(hicost)/100 # convert percent to fraction
         if self.hicost < 0 or self.hicost > 1:
             raise ValueError("high cost percentage must be in [0,100]")
-        self.capacitated = int(capacitated)/100 # convert percent into fraction
+        self.capacitated = int(capacitated)/100 # convert percent to fraction
         if self.capacitated < 0 or self.capacitated > 1:
             raise ValueError("capacitated percentage must be in [0,100]")
         self.mincap = int(mincap)
@@ -231,6 +231,8 @@ class NetgenNetworkGenerator:
                 print(str(temp) + ' ' + str(sinks[i]))###
             print("Sinks linked to source " + str(source))###
             print(sinks)###
+            print("Predecessor list:")###
+            print(pred)###
             
             # Ensure that any unselected sinks are chosen for the last source
             if source == self.sources and len(IndList) > 0:
@@ -246,6 +248,10 @@ class NetgenNetworkGenerator:
             del IndList
             
             # Distribute supply among the selected sinks
+            print("="*60)###
+            print("Predecessor list:")###
+            print(pred)###
+            print()###
             chain_length = sort_count
             supply_per_sink = self.b[source-1]//sinks_per_source
             print("Supply per sink: " + str(supply_per_sink) + "\n")###
@@ -264,17 +270,20 @@ class NetgenNetworkGenerator:
                 self.b[sinks[i]] -= partial_supply
                 self.b[sinks[j]] -= supply_per_sink - partial_supply
                 print(self.b)###
+                k = source
                 for j in range(self.Rng.generate(1, chain_length), 0, -1):
                     k = pred[k]
                     print("Processing node " + str(k))###
             self.b[sinks[0]] -= self.b[source-1] % sinks_per_source
             print("\nB: " + str(self.b) + "\n")###
+            print("-"*60)###
             
             # Sort skeleton arcs into a canonical order
             print("Pre-sort tails/heads:")###
             print(tail)###
             print(head)###
             self._sort_skeleton(sort_count, tail, head)
+            tail[sort_count+1] = 0
             print("Post-sort tails/heads:")###
             print(tail)###
             print(head)###
