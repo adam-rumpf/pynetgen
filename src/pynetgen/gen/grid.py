@@ -62,11 +62,11 @@ class GridNetworkGenerator:
         if mincost > maxcost:
             raise ValueError("min cost cannot exceed max cost")
         supply = int(supply)
-        hicost = int(hicost)/100 # convert percent to fraction
-        if hicost < 0 or hicost > 1:
+        hicost = int(hicost)
+        if hicost < 0 or hicost > 100:
             raise ValueError("high cost percentage must be in [0,100]")
-        capacitated = int(capacitated)/100 # convert percent to fraction
-        if capacitated < 0 or capacitated > 1:
+        capacitated = int(capacitated)
+        if capacitated < 0 or capacitated > 100:
             raise ValueError("capacitated percentage must be in [0,100]")
         mincap = int(mincap)
         maxcap = int(maxcap)

@@ -79,11 +79,11 @@ class NetgenNetworkGenerator:
             raise ValueError("transshipment sink count must be nonnegative")
         if self.tsinks > self.sinks:
             raise ValueError("transshipment sinks cannot exceed sinks")
-        self.hicost = int(hicost)/100 # convert percent to fraction
-        if self.hicost < 0 or self.hicost > 1:
+        self.hicost = int(hicost)
+        if self.hicost < 0 or self.hicost > 100:
             raise ValueError("high cost percentage must be in [0,100]")
-        self.capacitated = int(capacitated)/100 # convert percent to fraction
-        if self.capacitated < 0 or self.capacitated > 1:
+        self.capacitated = int(capacitated)
+        if self.capacitated < 0 or self.capacitated > 100:
             raise ValueError("capacitated percentage must be in [0,100]")
         self.mincap = int(mincap)
         self.maxcap = int(maxcap)
@@ -131,9 +131,13 @@ class NetgenNetworkGenerator:
         print()
         
         # Initialize variables
-        pred = [None for i in range(self.nodes)] # node predecessor indices
-        head = [None for i in range(self.density)] # arc head indices
-        tail = head[:] # arc tail indices
+        pred = [None for i in range(self.nodes)] # temporary node predecessors
+        head = [None for i in range(self.density)] # temporary arc heads
+        tail = head[:] # temporary arc tails
+        self._from = head[:] # final arc tails
+        self._to = head[:] # final arc heads
+        self._c = head[:] # final arc costs
+        self._u = head[:] # final arc capacities
         
         # Set supply values
         self.b = [0 for i in range(self.nodes)] # node supply values
@@ -287,8 +291,50 @@ class NetgenNetworkGenerator:
             print("Post-sort tails/heads:")###
             print(tail)###
             print(head)###
+            
+            # Assign attributes to skeleton arcs
+            i = 1
+            while i <= sort_count:
+
+                IndList = IndexList(self.sources-self.tsources+1, self.nodes)
+                IndList.remove(tail[i])
+                it = tail[i]
+                
+                while it == tail[i]:
+                
+                    IndList.remove(head[i])
+                    
+                    # Determine capacity
+                    cap = self.supply
+                    if self.Rng.generate(1, 100) <= self.capacitated:
+                        cap = max(self.b[source-1], self.mincap)
+                    
+                    # Determine cost
+                    cost = self.maxcost
+                    if self.Rng.generate(1, 100) > self.hicost:
+                        cost = self.Rng.generate(self.mincost, self.maxcost)
+                    
+                    # Record attributes
+                    self._from[self._arc_count] = it
+                    self._to[self._arc_count] = head[i]
+                    self._c[self._arc_count] = cost
+                    self._u[self._arc_count] = cap
+                    
+                    self._arc_count += 1
+                    i += 1
+                
+                self._pick_head(IndList, it)
+                del IndList
+            
+            # Complete network with random arcs
+            for i in range(self.nodes - self.sinks + 1,
+                           self.nodes - self.sinks + self.tsinks):
+                IndList = IndexList(self.sources-self.tsources+1, self.nodes)
+                IndList.remove(i)
+                self._pick_head(IndList, i)
+                del IndList
         
-        ###
+        return self._arc_count
     
     #-------------------------------------------------------------------------
     
@@ -336,3 +382,42 @@ class NetgenNetworkGenerator:
                     head[i], head[i+m] = head[i+m], head[i]
                     i -= m
             m //= 2
+    
+    #-------------------------------------------------------------------------
+    
+    def _pick_head(self, IList, desired_tail):
+        """Pick the next skeleton head during skeleton arc generation."""
+        
+        non_sources = self.nodes - self.sources + self.tsources
+        remaining_arcs = self.density - self._arc_count
+        
+        self._nodes_left -= 1
+        if 2*self._nodes_left >= remaining_arcs:
+            return None
+        
+        if ((remaining_arcs+non_sources-IList.pseudo_size-1)/
+            (self._nodes_left+1) >= non_sources - 1):
+            limit = non_sources
+        else:
+            upper_bound = 2*(remaining_arcs/(self._nodes_left + 1) - 1)
+            while True:
+                limit = self.Rng.generate(1, upper_bound)
+                if self._nodes_left == 0:
+                    limit = remaining_arcs
+                if self._nodes_left*(non_sources-1) >= remaining_arcs - limit:
+                    break
+        
+        while limit > 0:
+            limit -= 1
+            index = IList.pop(self.Rng.generate(1, IList.pseudo_size))
+            cap = self.supply
+            if self.Rng.generate(1, 100) <= self.capacitated:
+                cap = self.Rng.generate(self.mincap, self.maxcap)
+        
+            if 1 <= index and index <= self.nodes:
+                self._from[self._arc_count] = desired_tail
+                self._to[self._arc_count] = index
+                self._c[self._arc_count] = self.Rng.generate(self.mincost,
+                                                             self.maxcost)
+                self._u[self._arc_count] = cap
+                self._arc_count += 1
