@@ -20,7 +20,7 @@ class IndexList(list):
     This version is implemented as a subclass of Python's built-in list class.
     Be aware that the behavior of this class is not defined for methods other
     than those required by NETGEN, which include:
-        __init__, pop, remove
+        __init__, __len__, pop, remove
     """
 
     #-------------------------------------------------------------------------
@@ -127,9 +127,9 @@ class IndexList(list):
     def pseudo_size(self):
         """Pseudo size attribute required by NETGEN.
 
-        The index list's pseudo size is usually simply equal to its length,
-        but it decrements whenever an attempt is made to remove an element
-        from the list, regardless of whether the attempt was successful.
+        The index list's pseudo size is usually just equal to its length, but
+        it decrements whenever an attempt is made to remove an element from
+        the list, regardless of whether the attempt was successful.
 
         The pseudo size is prohibited from decreasing below 0.
         """
