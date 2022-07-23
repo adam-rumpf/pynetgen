@@ -6,7 +6,6 @@ which are handled using the classes defined in the submodules.
 Importing the pynetgen module allows the netgen_generate and grid_generate
 methods to be called from within Python. Random networks can also be generated
 from the command line using the "pynetgen" shell script. For help, use:
-
 $ pynetgen --help
 """
 
@@ -23,7 +22,8 @@ vers = ("PyNETGEN v" + __version__ + "\nCopyright (c) " + _copyright_year
 epil = """
 This shell script generates random network flows problem instances exported in
 DIMACS graph format <http://dimacs.rutgers.edu/archive/Challenges/>. The
-"method" argument specifies the network generation method. Choices include:
+"arg_list" argument specifies the network generation method and its options.
+Choices for method include:
     netgen
     grid
 
@@ -33,13 +33,15 @@ $ pynetgen grid help
 
 The "netgen" option is a Python implementation of NETGEN, a random network
 flows problem instance generator defined in Klingman, Napier, and Stutz 1974
-(doi:10.1287/mnsc.20.5.814). The original NETGEN script, along with its
-pseudorandom number generator, is included along with some other types of
-random network scripts. PyNETGEN is based primarily on a C implementation of
-NETGEN (copyright (c) 1989 Norbert Schlenker).
+(doi:10.1287/mnsc.20.5.814). The algorithm is based primarily on a C
+implementation of NETGEN (copyright (c) 1989 Norbert Schlenker).
+
+The "grid" option is a grid-based network generation method based on an
+algorithm described in Sadeghi, Seifi, and Azizi 2017
+(doi:10.1016/j.cie.2017.02.006).
 """
 netgen_instructions = """
-usage: pynetgen.py [-f [FILE]] netgen [ARGS ...]
+usage: pynetgen.py [-q] [-f [FILE]] netgen [ARGS ...]
 
 An implementation of the NETGEN network flows problem instance generator.
 
@@ -62,6 +64,11 @@ The command line arguments for the NETGEN script are as follows (in order):
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
 
+The -q tag silences the result message.
+
+The -f argument specifies an output file path. Results are printed to the
+screen if left blank.
+
 NETGEN is a standard network flows problem instance generator defined in:
 
     D. Klingman, A. Napier, and J. Stutz. NETGEN: A Program for generating
@@ -71,7 +78,7 @@ NETGEN is a standard network flows problem instance generator defined in:
 
 With the exception of the final "rng" argument and the optional file tag, the
 command line arguments of this script are identical to those of the original C
-implementation.
+implementation. All network parameters are integer.
 
 By default the resulting problem instance is a minimum-cost flow problem.
 Transportation and maximum flow problems can also be generated, and are
@@ -112,6 +119,13 @@ The command line arguments for the grid-based method are as follows (in order):
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+
+All network parameters are integer.
+
+The -q tag silences the result message.
+
+The -f argument specifies an output file path. Results are printed to the
+screen if left blank.
 
 This is a simple network flows problem instance generator that uses a
 grid-based network. The network consists of a square grid of nodes, with a
@@ -155,6 +169,8 @@ def main():
     parser = argparse.ArgumentParser(description=desc, epilog=epil,
                          formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-v", "--version", action="version", version=vers)
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="silence result message")
     parser.add_argument("-f", "--file", nargs="?", dest="file",
                         help="output file path (prints to screen if blank)")
     parser.add_argument("arg_list", nargs="+",
@@ -178,13 +194,17 @@ def main():
             # NETGEN requires 0-15 arguments
             if len(arg_list) > 15:
                 raise TypeError("NETGEN requires 0-15 arguments")
-            netgen_generate(*arg_list[1:])
+            netgen_generate(*arg_list[1:], fname=args.file)
+            if args.quiet == False and args.file != None:
+                print("Network successfully written to " + args.file)
             return None
         if arg_list[0] == "grid":
             # The grid algorithm requires 0-14 argumets
             if len(arg_list) > 14:
                 raise TypeError("grid algorithm requires 0-14 arguments")
-            grid_generate(*arg_list[1:])
+            grid_generate(*arg_list[1:], fname=args.file)
+            if args.quiet == False and args.file != None:
+                print("Network successfully written to " + args.file)
             return None
 
 #-----------------------------------------------------------------------------
@@ -192,11 +212,12 @@ def main():
 def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
                     mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
                     hicost=0, capacitated=100, mincap=100, maxcap=1000,
-                    rng=0):
+                    rng=0, fname=None):
     """
     netgen_generate([seed][, nodes][, sources][, sinks][, density][, ...
                     mincost][, maxcost][, supply][, tsources][, tsinks][, ...
-                    hicost][, capacitated][, mincap][, maxcap][, rng])
+                    hicost][, capacitated][, mincap][, maxcap][, rng][, ...
+                    fname])
     
     The main NETGEN random network generation function.
 
@@ -218,9 +239,11 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+    fname -- path of output file (default None, which prints to screen)
     
-    All keyword arguments besides the RNG selection are identical to those of
-    the original C implementation of NETGEN.
+    All keyword arguments besides the RNG selection and the file name are
+    identical to those of the original C implementation of NETGEN.  All
+    network parameters are integer.
 
     The problem type is implicitly determined according to the network's
     attributes. By default NETGEN generates a minimum-cost network flows
@@ -238,25 +261,31 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
 
     Arc costs and capacities are drawn uniformly at random from the specified
     ranges.
+    
+    Returns 0 on successful exit.
     """
     
     # Initialize the network generation object
-    NetworkGenerator = NetgenNetworkGenerator(seed=seed, nodes=nodes,
-        sources=sources, sinks=sinks, density=density, mincost=mincost,
-        maxcost=maxcost, supply=supply, tsources=tsources, tsinks=tsinks,
-        hicost=hicost, capacitated=capacitated, mincap=mincap, maxcap=maxcap,
-        rng=rng)
+    Network = NetgenNetworkGenerator(seed=seed, nodes=nodes, sources=sources,
+        sinks=sinks, density=density, mincost=mincost, maxcost=maxcost,
+        supply=supply, tsources=tsources, tsinks=tsinks, hicost=hicost,
+        capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng)
 
-    ###
+    # Print the network to the specified destination
+    Network.write(fname=fname)
+    
+    del Network
+    
+    return 0
 
 #-----------------------------------------------------------------------------
 
 def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
                  wrap=0, mincost=10, maxcost=99, supply=1000, hicost=0,
-                 capacitated=100, mincap=100, maxcap=1000, rng=0):
+                 capacitated=100, mincap=100, maxcap=1000, rng=0, fname=None):
     """grid_generate([seed][, rows][, columns][, diagonal][, reverse][, ...
                      wrap][, mincost][, maxcost][, supply][, hicost][, ...
-                     capacitated][, mincap][, maxcap][, rng])
+                     capacitated][, mincap][, maxcap][, rng][, fname])
     
     A grid-based random network generation function.
     
@@ -278,6 +307,9 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+    fname -- path of output file (default None, which prints to screen)
+    
+    All network parameters are integer.
     
     The grid-based network consists of an m-by-n array of transshipment nodes
     with one master source that acts as a predecessor to every node in the
@@ -304,23 +336,25 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
 
     Arc costs and capacities are drawn uniformly at random from the specified
     ranges.
+    
+    Returns 0 on successful exit.
     """
     
     # Initialize network generation object
-    NetworkGenerator = GridNetworkGenerator(seed=seed, rows=rows,
-        columns=columns, diagonal=diagonal, reverse=reverse, wrap=wrap,
-        mincost=mincost, maxcost=maxcost, supply=supply, hicost=hicost,
-        capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng)
+    Network = GridNetworkGenerator(seed=seed, rows=rows, columns=columns,
+        diagonal=diagonal, reverse=reverse, wrap=wrap, mincost=mincost,
+        maxcost=maxcost, supply=supply, hicost=hicost, capacitated=capacitated,
+        mincap=mincap, maxcap=maxcap, rng=rng)
     
-    ###
+    # Print the network to the specified destination
+    Network.write(fname=fname)
+    
+    del Network
+    
+    return 0
 
 #-----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     # Run main script to parse command line arguments and generate a network
     main()
-
-###
-###test = GridNetworkGenerator()
-###
-main()

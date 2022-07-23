@@ -112,8 +112,7 @@ class NetgenRandom(StandardRandom):
     This is a subclass of the standard library random number generator defined
     above, but replaces its random number generator with the pseudorandom
     process used in the original C implementation of NETGEN by Norbert
-    Schlenker. By using this, PyNETGEN is capeable of producing networks
-    identical to those of NETGEN when given identical parameters and seeds.
+    Schlenker.
     
     This generator is seeded in exactly the same way as StandardRandom, but
     generates its next random value by using its previously-generated value

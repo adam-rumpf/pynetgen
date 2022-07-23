@@ -45,6 +45,10 @@ class NetgenNetworkGenerator:
             including:
             0: the original NETGEN pseudorandom number generator
             1: the Python standard library random number generator
+        
+        All keyword arguments besides the RNG selection and the file name are
+        identical to those of the original C implementation of NETGEN. All
+        network parameters are integer.
         """
         
         # Validate inputs and convert to correct data types
@@ -267,9 +271,6 @@ class NetgenNetworkGenerator:
                 IndList.remove(i)
                 self._pick_head(IndList, i)
                 del IndList
-        
-        ###
-        self.write()
         
         return self._arc_count
     
