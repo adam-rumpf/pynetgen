@@ -104,7 +104,12 @@ class NetgenNetworkGenerator:
         # Initialize attributes for temporary storage
         self._arc_count = 0 # number of arcs generated so far
         self._nodes_left = self.nodes - self.sinks + self.tsinks # nodes to gen
+        self._b = [0 for i in range(self.nodes)] # node supply values
         self._type = 0 # problem type (0: mincost, 1: maxflow, 2:assignment)
+        self._from = [None for i in range(self.density)] # final arc tails
+        self._to = self._from[:] # final arc heads
+        self._c = self._from[:] # final arc costs
+        self._u = self._from[:] # final arc capacities
         
         # Determine which type of problem to generate
         if ((self.sources - self.tsources + self.sinks - self.tsinks ==
@@ -123,15 +128,10 @@ class NetgenNetworkGenerator:
         
         # Initialize variables
         pred = [None for i in range(self.nodes)] # temporary node predecessors
-        head = [None for i in range(self.density)] # temporary arc heads
-        tail = head[:] # temporary arc tails
-        self._from = head[:] # final arc tails
-        self._to = head[:] # final arc heads
-        self._c = head[:] # final arc costs
-        self._u = head[:] # final arc capacities
+        head = self._from[:] # temporary arc heads
+        tail = self._from[:] # temporary arc tails
         
         # Set supply values
-        self._b = [0 for i in range(self.nodes)] # node supply values
         self._create_supply()
         
         # Form most of the network skeleton by forming chains of transshipment
@@ -278,8 +278,30 @@ class NetgenNetworkGenerator:
     def _create_assignment(self):
         """Generates an assignment problem."""
         
-        ###
-        print("Assignment problem")###
+        for source in range(self.nodes/2):
+            self._b[source] = 1
+        while source < self.nodes:
+            self._b[source] = -1
+            source += 1
+        
+        Skeleton = IndexList(self.sources+1, self.nodes)
+        for source in range(1, self.nodes/2 + 1):
+            index = Skeleton.pop(self.Rng.generate(1, len(Skeleton)))
+            
+            self._from[self._arc_count] = source
+            self._to[self._arc_count] = index
+            self._c[self._arc_count] = self.Rng.generate(self.mincost,
+                                                         self.maxcost)
+            self._u[self._arc_count] = 1
+            self._arc_count += 1
+            
+            IndList = IndexList(self.sources+1, self.nodes)
+            IndList.remove(index)
+            self._pick_head(IndList, source)
+            
+            del IndList
+        
+        del Skeleton
     
     #-------------------------------------------------------------------------
     
