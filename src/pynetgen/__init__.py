@@ -12,6 +12,8 @@ This package is based on a C implementation of NETGEN by Norbert Schlenker
 (1989). The original implementation was used to generate random minimum-cost
 flow, maximum flow, and assignment problems, exported in a DIMACS graph
 format.
+
+Additional random network generation methods are also included.
 """
 
 from ._version import __author__, __version__, _author_email, _copyright_year

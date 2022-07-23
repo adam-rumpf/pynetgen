@@ -20,7 +20,7 @@ class IndexList(list):
     This version is implemented as a subclass of Python's built-in list class.
     Be aware that the behavior of this class is not defined for methods other
     than those required by NETGEN, which include:
-        __init__, pop
+        __init__, pop, remove
     """
 
     #-------------------------------------------------------------------------
@@ -66,34 +66,60 @@ class IndexList(list):
     #-------------------------------------------------------------------------
 
     def pop(self, index=-1):
-        """Removes and returns an item at a given index.
+        """Removes and returns an item at a given index (starting from 1).
 
         Keyword arguments:
         index -- index of the element to remove (default last)
 
         The index list behavior of this class is mostly unchanged from that of
-        lists, except that it returns 0 rather than raising an exception when
-        an invalid index is chosen, and calling it always reduces the pseudo
-        size.
-
-        Aliases: pop, choose_index, remove_index
+        lists, except that it returns 0 when the specified index is 0 or
+        invalid. A successful call decrements the pseudo size.
+        
+        Note that this list is indexed from 1, so the first index is 1 and
+        the last is equal to the length of the list.
+        
+        Aliases: pop, choose_index
         """
 
-        # Decrement pseudo size (unless already zero)
-        if self._pseudo_size > 0:
-            self._pseudo_size -= 1
-
         # Attempt to pop the specified element
-        try:
-            # Pop element if valid
-            return super().pop(index)
-        except IndexError:
-            # Return 0 if not
+        if index < 1 or index > super().__len__():
+            # Return 0 for an invalid index
             return 0
-
-    # Aliases
+        else:
+            # Decrement pseudo size (unless already zero)
+            if self._pseudo_size > 0:
+                self._pseudo_size -= 1
+            # Otherwise pop the specified index (offset by 1)
+            return super().pop(index-1)
+    
+    # Define aliases
     choose_index = pop
-    remove_index = pop
+    
+    #-------------------------------------------------------------------------
+
+    def remove(self, index):
+        """Attempts to remove a specified element from the list.
+
+        Positional arguments:
+        index -- value of element to attempt to remove
+
+        Calling this method always reduces the list's pseudo size by 1. If the
+        specified value is invalid, no error is thrown.
+        
+        Aliases: remove, remove_index
+        """
+
+        # Reduce the pseudo size
+        self.pseudo_size -= 1
+        
+        # Attempt to remove the specified element
+        try:
+            super().remove(index)
+        except ValueError:
+            pass
+    
+    # Define aliases
+    remove_index = remove
 
     #-------------------------------------------------------------------------
 

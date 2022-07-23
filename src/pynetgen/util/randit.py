@@ -82,21 +82,27 @@ class StandardRandom:
         
         Calling this method also updates this object's previously-generated
         value attribute (before restricting to the requested range).
+        
+        The bounds are meant to satisfy b >= a. In the case of b <= a, the
+        output is always chosen to be b, but the random iterator is still
+        updated.
         """
 
-        # Ensure that a and b are nonnegative integers satisfying b >= a >= 0
+        # Ensure that a and b are nonnegative integers
         a = int(a)
         b = int(b)
-        if a < 0:
+        if a < 0 or b < 0:
             raise ValueError("random number bounds must be nonnegative")
-        if b <= a:
-            return b
 
         # Apply the standard library random number generator
-        num = random.randint(a, b) # choose a random number
+        num = random.randint(min(a,b), max(a,b)) # choose a random number
         self.previous = num # update previous value
 
-        return num
+        # Decide which value to output
+        if b <= a:
+            return b
+        else:
+            return num
 
 #=============================================================================
 
@@ -130,15 +136,17 @@ class NetgenRandom(StandardRandom):
         Calling this method also updates this object's previously-generated
         value attribute (before restricting to the requested range), which is
         in turn used as the seed for the next pseudorandom value.
+        
+        The bounds are meant to satisfy b >= a. In the case of b <= a, the
+        output is always chosen to be b, but the random iterator is still
+        updated.
         """
 
-        # Ensure that a and b are nonnegative integers satisfying b >= a >= 0
+        # Ensure that a and b are nonnegative integers
         a = int(a)
         b = int(b)
-        if a < 0:
+        if a < 0 or b < 0:
             raise ValueError("random number bounds must be nonnegative")
-        if b <= a:
-            return b
 
         # C implementation public domain generator
         hi = 16807 * (self.previous >> 16)
@@ -151,7 +159,11 @@ class NetgenRandom(StandardRandom):
 
         # Update previous value
         self.previous = (hi << 16) + lo
-        if self.previous  < 0:
+        if self.previous < 0:
             self.previous += 2147483647
-
-        return a + self.previous % (b - a + 1)
+        
+        # Decide which value to output
+        if b <= a:
+            return b
+        else:
+            return a + self.previous % (b - a + 1)
