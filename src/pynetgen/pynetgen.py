@@ -166,7 +166,8 @@ def main():
     """
     
     # Define argument parser
-    parser = argparse.ArgumentParser(description=desc, epilog=epil,
+    parser = argparse.ArgumentParser(prog="pynetgen", description=desc,
+                         epilog=epil,
                          formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-v", "--version", action="version", version=vers)
     parser.add_argument("-q", "--quiet", action="store_true",
