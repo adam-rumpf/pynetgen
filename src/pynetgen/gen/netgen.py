@@ -99,6 +99,7 @@ class NetgenNetworkGenerator:
             self.Rng = StandardRandom(seed)
         else:
             raise ValueError("RNG index must be 0 or 1")
+        self.seed = self.Rng.seed # copy RNG's seed in case of -1
         
         # Initialize attributes for temporary storage
         self._arc_count = 0 # number of arcs generated so far
@@ -120,13 +121,6 @@ class NetgenNetworkGenerator:
     def _create_problem(self):
         """Generates a min-cost flow or max-flow problem."""
         
-        ### RNG test
-        print("RNG test:")
-        for i in range(10):
-            print(self.Rng.generate(1, 3))
-        self.Rng.set_seed(self.seed)
-        print()
-        
         # Initialize variables
         pred = [None for i in range(self.nodes)] # temporary node predecessors
         head = [None for i in range(self.density)] # temporary arc heads
@@ -146,9 +140,6 @@ class NetgenNetworkGenerator:
         # Point sources at selves
         for i in range(1, self.sources+1):
             pred[i] = i
-        ###
-        print("pred, after pointing sources at selves")
-        print(pred)
         
         # Make an index list for the nodes
         IndList = IndexList(self.sources + 1, self.nodes - self.sinks)
@@ -157,37 +148,22 @@ class NetgenNetworkGenerator:
         # Distribute the first 60% of transshipment nodes evenly among sources
         for i in range(self.nodes - self.sources - self.sinks,
                       int((4*(self.nodes-self.sources-self.sinks)+9)/10), -1):
-            s = str(i) + ' ' + str(len(IndList)) + ' '###
-            temp = self.Rng.generate(1, len(IndList))###
-            s += str(temp) + ' '###
-            node = IndList.pop(temp)
-            s += str(node)###
+            node = IndList.pop(self.Rng.generate(1, len(IndList)))
             pred[node] = pred[source]
             pred[source] = node
             source += 1
             if source > self.sources:
                 source = 1
-            print(s)###
-        print()###
         
         # Distribute the remaining transshipment nodes randomly
         while i > 1:
             i -= 1
-            print("i=" + str(i) + ", index size=" + str(len(IndList)) + ", ")###
-            temp = self.Rng.generate(1, len(IndList))###
-            print("list index=" + str(temp) + ", ")###
-            node = IndList.pop(temp)
-            print("node=" + str(node) + ", SOURCES=" + str(self.sources) + ", ")###
+            node = IndList.pop(self.Rng.generate(1, len(IndList)))
             source = self.Rng.generate(1, self.sources)
-            print("source=" + str(source))###
             pred[node] = pred[source]
             pred[source] = node
         
         del IndList
-        
-        ###
-        print("pred, after the initial source chains:")
-        print(pred)
         
         # Link each source chain to sinks, assign skeletal arc capacities
         # and costs, then complete the network with random arcs
@@ -205,89 +181,50 @@ class NetgenNetworkGenerator:
                 tail[sort_count] = pred[node]
                 node = pred[node]
             
-            ###
-            print("Source " + str(source) + " head/tail/pred:")
-            print(head)
-            print(tail)
-            print(pred)
-            
             # Choose number of sinks to link to this chain
             if self.nodes == self.sources + self.sinks:
-                print("Case A")###
                 sinks_per_source = int(self.sinks/self.sources) + 1
             else:
-                print("Case B")###
-                print("Sort count " + str(sort_count))###
                 sinks_per_source = 2*int((sort_count*self.sinks)/
                                    (self.nodes - self.sources - self.sinks))
             sinks_per_source = max(2, min(sinks_per_source, self.sinks))
-            print("Sinks per source: " + str(sinks_per_source) + "\n")###
             
             # Choose the sinks to link to this chain
             sinks = [None for i in range(self.nodes)]
             IndList = IndexList(self.nodes - self.sinks, self.nodes - 1)
             for i in range(sinks_per_source):
-                temp = self.Rng.generate(1, len(IndList))###
-                sinks[i] = IndList.pop(temp)
-                print(str(temp) + ' ' + str(sinks[i]))###
-            print("Sinks linked to source " + str(source))###
-            print(sinks)###
-            print("Predecessor list:")###
-            print(pred)###
+                sinks[i] = IndList.pop(self.Rng.generate(1, len(IndList)))
             
             # Ensure that any unselected sinks are chosen for the last source
             if source == self.sources and len(IndList) > 0:
-                print("Last source.")###
                 while len(IndList) > 0:
                     j = IndList.pop(1)
                     if self._b[j] == 0:
                         sinks[sinks_per_source] = j
                         sinks_per_source += 1
-                print("Updated sink list:")###
-                print(sinks)###
             
             del IndList
             
             # Distribute supply among the selected sinks
-            print("="*60)###
-            print("Predecessor list:")###
-            print(pred)###
-            print()###
             chain_length = sort_count
             supply_per_sink = self._b[source-1]//sinks_per_source
-            print("Supply per sink: " + str(supply_per_sink) + "\n")###
             k = pred[source]
-            print("Processing node " + str(k))###
             for i in range(sinks_per_source):
                 sort_count += 1
-                print(sort_count)###
                 partial_supply = self.Rng.generate(1, supply_per_sink)
-                print(partial_supply)###
                 j = self.Rng.generate(0, sinks_per_source - 1)
-                print(j)###
                 tail[sort_count] = k
                 head[sort_count] = sinks[i] + 1
-                print("(" + str(tail[sort_count]) + "," + str(head[sort_count]) + ")")
                 self._b[sinks[i]] -= partial_supply
                 self._b[sinks[j]] -= supply_per_sink - partial_supply
-                print(self._b)###
                 k = source
                 for j in range(self.Rng.generate(1, chain_length), 0, -1):
                     k = pred[k]
-                    print("Processing node " + str(k))###
             self._b[sinks[0]] -= self._b[source-1] % sinks_per_source
-            print("\nB: " + str(self._b) + "\n")###
-            print("-"*60)###
             
             # Sort skeleton arcs into a canonical order
-            print("Pre-sort tails/heads:")###
-            print(tail)###
-            print(head)###
             self._sort_skeleton(sort_count, tail, head)
             tail[sort_count+1] = 0
-            print("Post-sort tails/heads:")###
-            print(tail)###
-            print(head)###
             
             # Assign attributes to skeleton arcs
             i = 1
@@ -357,10 +294,6 @@ class NetgenNetworkGenerator:
                                                              - partial_supply)
         self._b[self.Rng.generate(0, self.sources-1)] += (self.supply %
                                                          self.sources)
-        
-        ###
-        print("b[], after create_supply()")
-        print(self._b)
     
     #-------------------------------------------------------------------------
     
@@ -368,16 +301,12 @@ class NetgenNetworkGenerator:
         """Conduct a shell sort of a portion of the skeleton arcs by tail."""
         
         m = sort_count
-        print(sort_count)###
         m //= 2
         while m != 0:
-            print("!")###
             k = sort_count - m
             for j in range(1, k+1):
-                print("?")###
                 i = j
                 while i >= 1 and tail[i] > tail[i+m]:
-                    print(f"({i},{j},{k}")###
                     tail[i], tail[i+m] = tail[i+m], tail[i]
                     head[i], head[i+m] = head[i+m], head[i]
                     i -= m
