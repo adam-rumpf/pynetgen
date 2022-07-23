@@ -3,6 +3,7 @@
 from pynetgen.util.ilist import IndexList
 from pynetgen.util.randit import NetgenRandom
 from pynetgen.util.randit import StandardRandom
+from pynetgen._version import __version__
 
 #=============================================================================
 
@@ -101,27 +102,23 @@ class NetgenNetworkGenerator:
         
         # Initialize attributes for temporary storage
         self._arc_count = 0 # number of arcs generated so far
-        self._nodes_left = nodes - sinks + tsinks # nodes left to generate
+        self._nodes_left = self.nodes - self.sinks + self.tsinks # nodes to gen
+        self._type = 0 # problem type (0: mincost, 1: maxflow, 2:assignment)
         
         # Determine which type of problem to generate
         if ((self.sources - self.tsources + self.sinks - self.tsinks ==
-            self.nodes) and sources - tsources == sinks - tsinks and
-            sources == supply):
+            self.nodes) and self.sources - self.tsources ==
+            self.sinks - self.tsinks and self.sources == self.supply):
+            self._type = 2
             self._create_assignment()
-        elif mincap == 1.0 and maxcap == 1.0:
-            self._create_problem(maxflow=True)
-        else:
-            self._create_problem(maxflow=False)
+        elif self.mincap == 1 and self.maxcap == 1:
+            self._type = 1
+        self._create_problem()
     
     #-------------------------------------------------------------------------
     
-    def _create_problem(self, maxflow=False):
-        """Generates a min-cost flow or max-flow problem.
-        
-        Keyword arguments:
-        maxflow -- True for a max flow problem, False for min-cost flow
-            (default False)
-        """
+    def _create_problem(self):
+        """Generates a min-cost flow or max-flow problem."""
         
         ### RNG test
         print("RNG test:")
@@ -140,7 +137,7 @@ class NetgenNetworkGenerator:
         self._u = head[:] # final arc capacities
         
         # Set supply values
-        self.b = [0 for i in range(self.nodes)] # node supply values
+        self._b = [0 for i in range(self.nodes)] # node supply values
         self._create_supply()
         
         # Form most of the network skeleton by forming chains of transshipment
@@ -243,7 +240,7 @@ class NetgenNetworkGenerator:
                 print("Last source.")###
                 while len(IndList) > 0:
                     j = IndList.pop(1)
-                    if self.b[j] == 0:
+                    if self._b[j] == 0:
                         sinks[sinks_per_source] = j
                         sinks_per_source += 1
                 print("Updated sink list:")###
@@ -257,7 +254,7 @@ class NetgenNetworkGenerator:
             print(pred)###
             print()###
             chain_length = sort_count
-            supply_per_sink = self.b[source-1]//sinks_per_source
+            supply_per_sink = self._b[source-1]//sinks_per_source
             print("Supply per sink: " + str(supply_per_sink) + "\n")###
             k = pred[source]
             print("Processing node " + str(k))###
@@ -271,15 +268,15 @@ class NetgenNetworkGenerator:
                 tail[sort_count] = k
                 head[sort_count] = sinks[i] + 1
                 print("(" + str(tail[sort_count]) + "," + str(head[sort_count]) + ")")
-                self.b[sinks[i]] -= partial_supply
-                self.b[sinks[j]] -= supply_per_sink - partial_supply
-                print(self.b)###
+                self._b[sinks[i]] -= partial_supply
+                self._b[sinks[j]] -= supply_per_sink - partial_supply
+                print(self._b)###
                 k = source
                 for j in range(self.Rng.generate(1, chain_length), 0, -1):
                     k = pred[k]
                     print("Processing node " + str(k))###
-            self.b[sinks[0]] -= self.b[source-1] % sinks_per_source
-            print("\nB: " + str(self.b) + "\n")###
+            self._b[sinks[0]] -= self._b[source-1] % sinks_per_source
+            print("\nB: " + str(self._b) + "\n")###
             print("-"*60)###
             
             # Sort skeleton arcs into a canonical order
@@ -307,7 +304,7 @@ class NetgenNetworkGenerator:
                     # Determine capacity
                     cap = self.supply
                     if self.Rng.generate(1, 100) <= self.capacitated:
-                        cap = max(self.b[source-1], self.mincap)
+                        cap = max(self._b[source-1], self.mincap)
                     
                     # Determine cost
                     cost = self.maxcost
@@ -334,6 +331,9 @@ class NetgenNetworkGenerator:
                 self._pick_head(IndList, i)
                 del IndList
         
+        ###
+        self.write()
+        
         return self._arc_count
     
     #-------------------------------------------------------------------------
@@ -352,15 +352,15 @@ class NetgenNetworkGenerator:
         supply_per_source = int(self.supply/self.sources)
         for i in range(self.sources):
             partial_supply = self.Rng.generate(1, supply_per_source)
-            self.b[i] += partial_supply
-            self.b[self.Rng.generate(0, self.sources-1)] += (supply_per_source
+            self._b[i] += partial_supply
+            self._b[self.Rng.generate(0, self.sources-1)] += (supply_per_source
                                                              - partial_supply)
-        self.b[self.Rng.generate(0, self.sources-1)] += (self.supply %
+        self._b[self.Rng.generate(0, self.sources-1)] += (self.supply %
                                                          self.sources)
         
         ###
         print("b[], after create_supply()")
-        print(self.b)
+        print(self._b)
     
     #-------------------------------------------------------------------------
     
@@ -421,3 +421,77 @@ class NetgenNetworkGenerator:
                                                              self.maxcost)
                 self._u[self._arc_count] = cap
                 self._arc_count += 1
+    
+    #-------------------------------------------------------------------------
+    
+    def write(self, fname=None):
+        """Writes the completed network to a file (or prints to screen).
+        
+        Keyword arguments:
+        fname -- output file path (default None, which prints to screen)
+        """
+        
+        # Begin to write output string
+        out = (f"c PyNETGEN v{__version__}\n" +
+        "c $ pip install pynetgen\nc\n" +
+        "c  NETGEN flow network generation algorithm\n" +
+        "c  Problem input parameters\n" +
+        "c  " + "-"*37 + "\n" +
+        f"c   Random seed:          {self.seed}\n" +
+        f"c   Number of nodes:      {self.nodes}\n" +
+        f"c   Source nodes:         {self.sources}\n" +
+        f"c   Sink nodes:           {self.sinks}\n" +
+        f"c   Number of arcs:       {self.density}\n" +
+        f"c   Minimum arc cost:     {self.mincost}\n" +
+        f"c   Maximum arc cost:     {self.maxcost}\n" +
+        f"c   Total supply:         {self.supply}\n" +
+        "c   Transshipment -\n" +
+        f"c     Sources:            {self.tsources}\n" +
+        f"c     Sinks:              {self.tsinks}\n" +
+        "c   Skeleton arcs -\n" +
+        f"c     With max cost:      {self.hicost}\n" +
+        f"c     Capacitated:        {self.capacitated}\n" +
+        f"c   Minimum arc capacity: {self.mincap}\n" +
+        f"c   Maximum arc capacity: {self.maxcap}\n")
+        
+        # Handle assignment problem
+        if self._type == 2:
+            out += "c\nc  *** Assignment ***\nc\n"
+            out += f"p asn {self.nodes} {self._arc_count}\n"
+            for i in range(self.nodes):
+                if self._b[i] > 0:
+                    out += f"n {i+1}\n"
+            for i in range(self._arc_count):
+                out += f"a {self._from[i]} {self._to[i]} {self._c[i]}\n"
+        
+        # Handle max flow problem
+        elif self._type == 1:
+            out += "c\nc  *** Maximum flow ***\nc\n"
+            out += f"p max {self.nodes} {self._arc_count}\n"
+            for i in range(self.nodes):
+                if self._b[i] > 0:
+                    out += f"n {i+1} s\n"
+                elif self._b[i] < 0:
+                    out += f"n {i+1} t\n"
+            for i in range(self._arc_count):
+                out += f"a {self._from[i]} {self._to[i]} {self._u[i]}\n"
+        
+        # Handle min-cost flow problem
+        else:
+            out += "c\nc  *** Minimum cost flow ***\nc\n"
+            out += f"p min {self.nodes} {self._arc_count}\n"
+            for i in range(self.nodes):
+                if self._b[i] != 0:
+                    out += f"n {i+1} {self._b[i]}\n"
+            for i in range(self._arc_count):
+                out += (f"a {self._from[i]} {self._to[i]} 0 {self._u[i]}" +
+                        f" {self._c[i]}\n")
+        
+        # Write or print string
+        if fname is None:
+            print(out)
+        else:
+            with open(fname, 'w') as f:
+                print(out[:-1], file=f)
+        
+        return 0
