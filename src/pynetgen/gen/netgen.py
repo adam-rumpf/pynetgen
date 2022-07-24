@@ -121,7 +121,7 @@ class NetgenNetworkGenerator:
             self.sinks - self.tsinks and self.sources == self.supply):
             self._type = 2
             self._create_assignment()
-        elif self.mincap == 1 and self.maxcap == 1:
+        elif self.mincost == 1 and self.maxcost == 1:
             self._type = 1
         self._create_problem()
     
