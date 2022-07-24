@@ -45,7 +45,7 @@ algorithm described in Sadeghi, Seifi, and Azizi 2017
 (doi:10.1016/j.cie.2017.02.006).
 """
 _netgen_instructions = """
-usage: pynetgen.py [-q] [-f [FILE]] netgen [ARGS ...]
+usage: pynetgen [-q] [-f [FILE]] netgen [ARGS ...]
 
 An implementation of the NETGEN network flows problem instance generator.
 
@@ -94,7 +94,7 @@ transshipment sources or sinks, and the total supply, sources, and sinks are
 all equal. It is a maximum flow problem if it is not an assignment problem and
 the min/max costs are both set to 1.
 
-Skeleton arcs are part of NETGEN's process for generated minimum-cost flow
+Skeleton arcs are part of NETGEN's process for generating minimum-cost flow
 problems, and are included to ensure feasibility. They are a subset of arcs
 that include paths from sources to sinks, and they are uncapacitated in order
 to ensure that the network can carry sufficient flow, but a fraction of them
@@ -102,7 +102,7 @@ are chosen to receive the maximum possible cost in order to discourage
 uninteresting solutions that use only the skeleton arcs.
 """
 _grid_instructions = """
-usage: pynetgen.py [-f [FILE]] grid [ARGS ...]
+usage: pynetgen [-f [FILE]] grid [ARGS ...]
 
 A grid-based network flows problem instance generator.
 
