@@ -1,12 +1,16 @@
-"""The main PyNETGEN module.
+"""A Python module for generating random network flows problem instances.
 
-This file contains the main driver functions for the PyNETGEN procedures,
-which are handled using the classes defined in the submodules.
+Importing the pynetgen module grants access to the two main public methods:
+    netgen_generate()
+    grid_generate()
+for generating random networks using the NETGEN algorithm or a grid-based
+network generation algorithm. Access their docstrings via help() for
+detailed usage instructions.
 
-Importing the pynetgen module allows the netgen_generate and grid_generate
-methods to be called from within Python. Random networks can also be generated
-from the command line using the "pynetgen" shell script. For help, use:
+PyNETGEN can also be accessed via the command line using the pynetgen shell
+script. Access its documentation via
 $ pynetgen --help
+for detailed usage instructions.
 """
 
 from ._version import __author__, __version__, _author_email, _copyright_year
@@ -16,10 +20,10 @@ from pynetgen.gen.netgen import NetgenNetworkGenerator
 import argparse
 
 # Define help strings
-desc = "Scripts for generating random flow networks in DIMACS format."
-vers = ("PyNETGEN v" + __version__ + "\nCopyright (c) " + _copyright_year
+_desc = "Scripts for generating random flow networks in DIMACS format."
+_vers = ("PyNETGEN v" + __version__ + "\nCopyright (c) " + _copyright_year
             + " " + __author__ + "\n" + _author_email)
-epil = """
+_epil = """
 This shell script generates random network flows problem instances exported in
 DIMACS graph format <http://dimacs.rutgers.edu/archive/Challenges/>. The
 "arg_list" argument specifies the network generation method and its options.
@@ -40,7 +44,7 @@ The "grid" option is a grid-based network generation method based on an
 algorithm described in Sadeghi, Seifi, and Azizi 2017
 (doi:10.1016/j.cie.2017.02.006).
 """
-netgen_instructions = """
+_netgen_instructions = """
 usage: pynetgen.py [-q] [-f [FILE]] netgen [ARGS ...]
 
 An implementation of the NETGEN network flows problem instance generator.
@@ -85,9 +89,10 @@ Transportation and maximum flow problems can also be generated, and are
 implicitly chosen according to the network parameters.
 
 The resulting problem instance is a transportation problem if the total number
-of sources and sinks equals the total number of nodes, and if there are no
-transshipment sources or sinks. It is a maximum flow problem if it is not an
-assignment problem and the min/max costs are both set to 1.
+of sources and sinks equals the total number of nodes, there are no
+transshipment sources or sinks, and the total supply, sources, and sinks are
+all equal. It is a maximum flow problem if it is not an assignment problem and
+the min/max costs are both set to 1.
 
 Skeleton arcs are part of NETGEN's process for generated minimum-cost flow
 problems, and are included to ensure feasibility. They are a subset of arcs
@@ -96,7 +101,7 @@ to ensure that the network can carry sufficient flow, but a fraction of them
 are chosen to receive the maximum possible cost in order to discourage
 uninteresting solutions that use only the skeleton arcs.
 """
-grid_instructions = """
+_grid_instructions = """
 usage: pynetgen.py [-f [FILE]] grid [ARGS ...]
 
 A grid-based network flows problem instance generator.
@@ -134,8 +139,9 @@ side extracting from all rows.
 
 By default the resulting problem instance is a minimum-cost flow problem. A
 maximum flow problem is generated if the minimum and maximum arc costs are both
-set equal to 1. Transshipment sources and sinks are not included, and
-transportation problems cannot be generated.
+set equal to 1 and the number of sources does not equal the total supply.
+Transshipment sources and sinks are not included. Transportation problems
+cannot be generated.
 
 The master source is located on the West side while the master sink is located
 on the East side. All transshipment arcs feed into their immediate neighbors to
@@ -150,6 +156,14 @@ feasibility. All arcs in the first row are treated as skeleton arcs, which are
 uncapacitated to ensure that the network can carry enough flow, but a fraction
 of them are chosen to receive the maximum possible cost in order to discourage
 uninteresting solutions that use only the skeleton arcs.
+
+In the output file, the different types of arcs in the arc list are divided
+using comments. In order, they consist of: the master supply arcs, the master
+sink arcs, the Eastern row arcs (with the first row constituting the skeleton
+arcs), the Western row arcs (if present), the Southern column arcs, the
+Northern column arcs, the Southeast diagonal arcs (if present), the Northeast
+diagonal arcs (if present), the Northwest diagonal arcs (if present), and
+finally the Southwest diagonal arcs (if present).
 """
 
 #=============================================================================
@@ -166,9 +180,10 @@ def main():
     """
     
     # Define argument parser
-    parser = argparse.ArgumentParser(description=desc, epilog=epil,
+    parser = argparse.ArgumentParser(prog="pynetgen", description=_desc,
+                         epilog=_epil,
                          formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-v", "--version", action="version", version=vers)
+    parser.add_argument("-v", "--version", action="version", version=_vers)
     parser.add_argument("-q", "--quiet", action="store_true",
                         help="silence result message")
     parser.add_argument("-f", "--file", nargs="?", dest="file",
@@ -182,10 +197,10 @@ def main():
     # Display method-specific help messages if requested
     if len(arg_list) > 1:
         if arg_list[0] == "netgen" and arg_list[1] == "help":
-            print(netgen_instructions)
+            print(_netgen_instructions)
             return None
         if arg_list[0] == "grid" and arg_list[1] == "help":
-            print(grid_instructions)
+            print(_grid_instructions)
             return None
 
     # If a method is selected, call its function with the other arguments
@@ -213,13 +228,7 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
                     mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
                     hicost=0, capacitated=100, mincap=100, maxcap=1000,
                     rng=0, fname=None):
-    """
-    netgen_generate([seed][, nodes][, sources][, sinks][, density][, ...
-                    mincost][, maxcost][, supply][, tsources][, tsinks][, ...
-                    hicost][, capacitated][, mincap][, maxcap][, rng][, ...
-                    fname])
-    
-    The main NETGEN random network generation function.
+    """The main NETGEN random network generation function.
 
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
@@ -283,11 +292,7 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
 def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
                  wrap=0, mincost=10, maxcost=99, supply=1000, hicost=0,
                  capacitated=100, mincap=100, maxcap=1000, rng=0, fname=None):
-    """grid_generate([seed][, rows][, columns][, diagonal][, reverse][, ...
-                     wrap][, mincost][, maxcost][, supply][, hicost][, ...
-                     capacitated][, mincap][, maxcap][, rng][, fname])
-    
-    A grid-based random network generation function.
+    """A grid-based random network generation function.
     
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
