@@ -80,7 +80,3 @@ The resulting network is output as a file in [DIMACS graph format](http://dimacs
   * `COST` is the arc's unit flow cost.
 
 The output file for a maximum-flow problem is mostly the same, except that the objective is `max` instead of `min`, and source and sink nodes are given the `SUPPLY` values `s` and `t`, respectively, rather than a specific number.
-
-## Project Status
-
-This is a work in progress. The NETGEN algorithm is complete but mostly untested, while the grid-based algorithm has not yet been implemented.

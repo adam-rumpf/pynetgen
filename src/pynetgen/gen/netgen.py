@@ -21,7 +21,7 @@ class NetgenNetworkGenerator:
     def __init__(self, seed=1, nodes=10, sources=3, sinks=3, density=30,
                     mincost=10, maxcost=99, supply=1000, tsources=0, tsinks=0,
                     hicost=0, capacitated=100, mincap=100, maxcap=1000,
-                    rng=0):
+                    rng=0, type=None):
         """NETGEN network object constructor.
         
         Keyword arguments:
@@ -45,10 +45,24 @@ class NetgenNetworkGenerator:
             including:
             0: the original NETGEN pseudorandom number generator
             1: the Python standard library random number generator
+        type -- problem type override (default None); setting to an integer
+            attempts to generate the specified type of problem and ignores the
+            default behavior explained below:
+            0: minimum-cost flow
+            1: maximum flow
+            2: transportation
         
         All keyword arguments besides the RNG selection and the file name are
         identical to those of the original C implementation of NETGEN. All
         network parameters are integer.
+        
+        The problem type is implicitly chosen based on the network attributes
+        (unless the "type" attribute is set). By default the problem is
+        minimum-cost flow. It is a transportation problem instead if the total
+        number of sources and sinks equals the total number of nodes, and if
+        no transshipment sources or sinks are specified. It is a maximum flow
+        problem if it is not a transportation problem, and if the minimum and
+        maximum arc costs are both exactly 1.
         """
         
         # Validate inputs and convert to correct data types
@@ -95,6 +109,10 @@ class NetgenNetworkGenerator:
         if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
+        if type != None:
+            type = int(type)
+            if type < 0 or type > 2:
+                raise ValueError("problem type index must be 0-2 or None")
         
         # Initialize random number generation object
         if rng == 0:
@@ -116,13 +134,19 @@ class NetgenNetworkGenerator:
         self._u = self._from[:] # final arc capacities
         
         # Determine which type of problem to generate
-        if ((self.sources - self.tsources + self.sinks - self.tsinks ==
-            self.nodes) and self.sources - self.tsources ==
-            self.sinks - self.tsinks and self.sources == self.supply):
-            self._type = 2
+        if type != None:
+            if ((self.sources - self.tsources + self.sinks - self.tsinks ==
+                self.nodes) and self.sources - self.tsources ==
+                self.sinks - self.tsinks and self.sources == self.supply):
+                self._type = 2
+            elif self.mincost == 1 and self.maxcost == 1:
+                self._type = 1
+            else:
+                self._type = 0
+        
+        # Choose the correct problem generation method
+        if type == 2:
             self._create_assignment()
-        elif self.mincost == 1 and self.maxcost == 1:
-            self._type = 1
         self._create_problem()
     
     #-------------------------------------------------------------------------
