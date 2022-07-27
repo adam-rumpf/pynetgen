@@ -288,13 +288,13 @@ class NetgenNetworkGenerator:
                 self._pick_head(IndList, it)
                 del IndList
             
-            # Complete network with random arcs
-            for i in range(self.nodes - self.sinks + 1,
-                           self.nodes - self.sinks + self.tsinks):
-                IndList = IndexList(self.sources-self.tsources+1, self.nodes)
-                IndList.remove(i)
-                self._pick_head(IndList, i)
-                del IndList
+        # Complete network with random arcs
+        for i in range(self.nodes - self.sinks + 1,
+                       self.nodes - self.sinks + self.tsinks):
+            IndList = IndexList(self.sources-self.tsources+1, self.nodes)
+            IndList.remove(i)
+            self._pick_head(IndList, i)
+            del IndList
         
         return self._arc_count
     
