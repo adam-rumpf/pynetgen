@@ -18,9 +18,9 @@ class GridNetworkGenerator:
     
     #-------------------------------------------------------------------------
     
-    def __init__(self, seed=1, rows=3, columns=4, diagonal=1, reverse=1,
-                 wrap=0, mincost=10, maxcost=99, supply=1000, hicost=0,
-                 capacitated=100, mincap=100, maxcap=1000, rng=0,
+    def __init__(self, seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
+                 reverse=1, wrap=0, mincost=10, maxcost=99, supply=1000,
+                 hicost=0, capacitated=100, mincap=100, maxcap=1000, rng=0,
                  type=None):
         """Grid-based network object constructor.
         
@@ -29,11 +29,12 @@ class GridNetworkGenerator:
         nodes -- number of nodes (default 10)
         rows -- number of grid rows (default 3)
         columns -- number of grid columns (default 4)
-        diagonal -- whether to include diagonal arcs (default 1)
+        skeleton -- number of skeleton rows (default 1)
+        diagonal -- whether to include diagonal arcs (bool; default 1)
         reverse -- whether to include arcs in the reverse direction
-            (default 1)
+            (bool; default 1)
         wrap -- whether to wrap the row adjacencies like a cylinder
-            (default 0)
+            (bool; efault 0)
         mincost -- minimum arc cost (default 10)
         maxcost -- maximum arc cost (default 99)
         supply -- total supply at the master supply node (default 1000)
@@ -69,6 +70,9 @@ class GridNetworkGenerator:
         self.columns = int(columns)
         if self.columns < 1:
             raise ValueError("grid must have at least 1 column")
+        self.skeleton = int(skeleton)
+        if self.skeleton < 0 or self.skeleton > self.rows:
+            raise ValueError("skeleton rows must be between 0 and rows")
         self.diagonal = bool(int(diagonal))
         self.reverse = bool(int(reverse))
         self.wrap = bool(int(wrap))
@@ -152,6 +156,7 @@ class GridNetworkGenerator:
         f"c   Random seed:          {self.seed}\n" +
         f"c   Number of rows:       {self.rows}\n" +
         f"c   Number of columns:    {self.columns}\n" +
+        f"c   Skeleton rows:        {self.skeleton}\n" +
         f"c   Diagonal arcs (bool): {int(self.diagonal)}\n" +
         f"c   Backward arcs (bool): {int(self.reverse)}\n" +
         f"c   Wraparound (bool):    {int(self.wrap)}\n" +
