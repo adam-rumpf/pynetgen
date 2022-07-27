@@ -109,7 +109,7 @@ class NetgenNetworkGenerator:
         if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
-        if type != None:
+        if type is not None:
             type = int(type)
             if type < 0 or type > 2:
                 raise ValueError("problem type index must be 0-2 or None")
@@ -134,7 +134,7 @@ class NetgenNetworkGenerator:
         self._u = self._from[:] # final arc capacities
         
         # Determine which type of problem to generate
-        if type != None:
+        if type is not None:
             if ((self.sources - self.tsources + self.sinks - self.tsinks ==
                 self.nodes) and self.sources - self.tsources ==
                 self.sinks - self.tsinks and self.sources == self.supply):

@@ -62,33 +62,33 @@ class GridNetworkGenerator:
         """
         
         # Validate inputs and convert to correct data types
-        seed = int(seed)
-        rows = int(rows)
-        if rows < 1:
+        self.seed = int(seed)
+        self.rows = int(rows)
+        if self.rows < 1:
             raise ValueError("grid must have at least 1 row")
-        columns = int(columns)
-        if columns < 1:
+        self.columns = int(columns)
+        if self.columns < 1:
             raise ValueError("grid must have at least 1 column")
-        diagonal = bool(int(diagonal))
-        reverse = bool(int(reverse))
-        wrap = bool(int(wrap))
-        mincost = int(mincost)
-        maxcost = int(maxcost)
-        if mincost > maxcost:
+        self.diagonal = bool(int(diagonal))
+        self.reverse = bool(int(reverse))
+        self.wrap = bool(int(wrap))
+        self.mincost = int(mincost)
+        self.maxcost = int(maxcost)
+        if self.mincost > maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        supply = int(supply)
-        hicost = int(hicost)
-        if hicost < 0 or hicost > 100:
+        self.supply = int(supply)
+        self.hicost = int(hicost)
+        if self.hicost < 0 or self.hicost > 100:
             raise ValueError("high cost percentage must be in [0,100]")
-        capacitated = int(capacitated)
-        if capacitated < 0 or capacitated > 100:
+        self.capacitated = int(capacitated)
+        if self.capacitated < 0 or self.capacitated > 100:
             raise ValueError("capacitated percentage must be in [0,100]")
-        mincap = int(mincap)
-        maxcap = int(maxcap)
-        if mincap > maxcap:
+        self.mincap = int(mincap)
+        self.maxcap = int(maxcap)
+        if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
-        if type != None:
+        if type is not None:
             type = int(type)
             if type < 0 or type > 1:
                 raise ValueError("problem type index must be 0, 1, or None")
@@ -112,13 +112,11 @@ class GridNetworkGenerator:
         
         # Initialize attributes for temporary storage
         self._type = 0 # problem type (0: mincost, 1: maxflow)
-        self._from = [None for i in range(self.density)] # final arc tails
-        self._to = self._from[:] # final arc heads
-        self._c = self._from[:] # final arc costs
-        self._u = self._from[:] # final arc capacities
+        self._arc_count = 0 # number of arcs generated
+        self._node_count = rows*columns + 2 # number of nodes generated
         
         # Determine which type of problem to generate
-        if type != None:
+        if type is not None:
             if (self.sources != self.supply and self.mincost == 1 and
                 self.maxcost == 1):
                 self._type = 1
@@ -135,3 +133,54 @@ class GridNetworkGenerator:
         
         ###
         pass
+    
+    #-------------------------------------------------------------------------
+    
+    def write(self, fname=None):
+        """Writes the completed network to a file (or prints to screen).
+        
+        Keyword arguments:
+        fname -- output file path (default None, which prints to screen)
+        """
+        
+        # Begin to write output string
+        out = (f"c PyNETGEN v{__version__}\n" +
+        "c $ pip install pynetgen\nc\n" +
+        "c  Grid-based flow network generation algorithm\n" +
+        "c  Problem input parameters\n" +
+        "c  " + "-"*37 + "\n" +
+        f"c   Random seed:          {self.seed}\n" +
+        f"c   Number of rows:       {self.rows}\n" +
+        f"c   Number of columns:    {self.columns}\n" +
+        f"c   Diagonal arcs (bool): {int(self.diagonal)}\n" +
+        f"c   Backward arcs (bool): {int(self.reverse)}\n" +
+        f"c   Wraparound (bool):    {int(self.wrap)}\n" +
+        f"c   Minimum arc cost:     {self.mincost}\n" +
+        f"c   Maximum arc cost:     {self.maxcost}\n" +
+        f"c   Total supply:         {self.supply}\n" +
+        "c   Skeleton arcs -\n" +
+        f"c     With max cost:      {self.hicost}\n" +
+        f"c     Capacitated:        {self.capacitated}\n" +
+        f"c   Minimum arc capacity: {self.mincap}\n" +
+        f"c   Maximum arc capacity: {self.maxcap}\n")
+        
+        # Handle max flow problem
+        if self._type == 1:
+            out += "c\nc  *** Maximum flow ***\nc\n"
+            out += f"p max {self._node_count} {self._arc_count}\n"
+            ###
+        
+        # Handle min-cost flow problem
+        else:
+            out += "c\nc  *** Minimum cost flow ***\nc\n"
+            out += f"p min {self._node_count} {self._arc_count}\n"
+            ###
+        
+        # Write or print string
+        if fname is None:
+            print(out)
+        else:
+            with open(fname, 'w') as f:
+                print(out[:-1], file=f)
+        
+        return 0
