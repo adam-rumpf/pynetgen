@@ -20,7 +20,7 @@ An alternate network generation algorithm is also included for generating grid-b
 
 ## Network Generation Algorithms
 
-Two different random network generation algorithms are defined. Both are capable of generating minimum-cost network flows problems according to a set of tuneable parameters that control things like the size of the network and the acceptable ranges of arc costs and capacities, and both have measures in place to guarantee that the resulting problem is feasible. To briefly describe each algorithm:
+Two different random network generation algorithms are defined. Both are capable of generating minimum-cost network flows problems according to a set of tuneable parameters that control things like the size of the network and the acceptable ranges of arc costs and capacities. Both also have measures in place to guarantee that the resulting problem is feasible. To briefly describe each algorithm:
 
 * The NETGEN algorithm (`netgen_generate`) begins by defining source and sink nodes and randomly distributing supply among them. It then generates a set of "skeleton arcs" to create paths from the sources to the sinks. Skeleton arcs are guaranteed to have enough capacity to carry all required flow, ensuring that the problem instance is feasible, but they can also be specified to have maximum cost in order to discourage uninteresting solutions that utilize only skeleton arcs. After the skeleton is defined, arcs are randomly generated between pairs of randomly-selected nodes until the desired density is reached.
 * The grid-based algorithm (`grid_generate`) defines a rectangular array of nodes with a specified number of columns and rows. A single master source is placed on one side, and a master sink is placed on the other. Arcs are generated in a square (or square with diagonal) grid pattern, and can be specified to be directed either strictly from the source side to the sink side or in both directions. The "skeleton arcs" consist of the first row of the grid, which is guaranteed to have enough capacity to carry all required flow, but at high cost.
@@ -80,7 +80,3 @@ The resulting network is output as a file in [DIMACS graph format](http://dimacs
   * `COST` is the arc's unit flow cost.
 
 The output file for a maximum-flow problem is mostly the same, except that the objective is `max` instead of `min`, and source and sink nodes are given the `SUPPLY` values `s` and `t`, respectively, rather than a specific number.
-
-## Project Status
-
-This is a work in progress. The NETGEN algorithm is complete but mostly untested, while the grid-based algorithm has not yet been implemented.
