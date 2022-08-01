@@ -22,7 +22,7 @@ class GridNetworkGenerator:
     #-------------------------------------------------------------------------
     
     def __init__(self, seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
-                 reverse=1, wrap=0, mincost=10, maxcost=99, supply=1000,
+                 reverse=0, wrap=0, mincost=10, maxcost=99, supply=1000,
                  hicost=0, capacitated=100, mincap=100, maxcap=1000, rng=0,
                  type=None):
         """Grid-based network object constructor.
@@ -35,7 +35,7 @@ class GridNetworkGenerator:
         skeleton -- number of skeleton rows (default 1)
         diagonal -- whether to include diagonal arcs (bool; default 1)
         reverse -- whether to include arcs in the reverse direction
-            (bool; default 1)
+            (bool; default 0)
         wrap -- whether to wrap the row adjacencies like a cylinder
             (bool; efault 0)
         mincost -- minimum arc cost (default 10)
@@ -146,11 +146,11 @@ class GridNetworkGenerator:
         if self.skeleton > 1:
             skeleton_cap = math.ceil(self.supply/self.skeleton)
         
-        # Master supply arcs
+        # Master source arcs
         for i in range(self.rows):
             self._make_arc(1, i+2, 0, self.supply)
         
-        # West/East rows
+        # West/East arcs
         for i in range(self.rows):
             for j in range(self.columns-1):
                 c = self.Rng.generate(self.mincost, self.maxcost) # cost
@@ -170,20 +170,113 @@ class GridNetworkGenerator:
                 self._make_arc(self._coord_id(i, j), self._coord_id(i, j+1),
                                c, u)
         
-        # North/South columns
+        # East/West arcs (only if using reverse arcs)
+        if self.reverse:
+            for i in range(self.rows):
+                for j in range(self.columns-1):
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(i, j+1),
+                                   self._coord_id(i, j), c, u)
+        
+        # North/South arcs
         for j in range(self.columns):
             for i in range(self.rows-1):
-                c = self.Rng.generate(self.mincost, self.maxcost) # cost
+                c = self.Rng.generate(self.mincost, self.maxcost)
                 u = self.Rng.generate(self.mincap, self.maxcap)
                 self._make_arc(self._coord_id(i, j), self._coord_id(i+1, j),
                                c, u)
             
             # Handle wraparound
             if self.wrap:
-                c = self.Rng.generate(self.mincost, self.maxcost) # cost
+                c = self.Rng.generate(self.mincost, self.maxcost)
                 u = self.Rng.generate(self.mincap, self.maxcap)
-                self._make_arc(self._coord_id(self.rows, j),
+                self._make_arc(self._coord_id(self.rows-1, j),
                                self._coord_id(0, j), c, u)
+        
+        # South/North arcs
+        for j in range(self.columns):
+            for i in range(self.rows-1):
+                c = self.Rng.generate(self.mincost, self.maxcost)
+                u = self.Rng.generate(self.mincap, self.maxcap)
+                self._make_arc(self._coord_id(i+1, j), self._coord_id(i, j),
+                               c, u)
+            
+            # Handle wraparound
+            if self.wrap:
+                c = self.Rng.generate(self.mincost, self.maxcost)
+                u = self.Rng.generate(self.mincap, self.maxcap)
+                self._make_arc(self._coord_id(0, j),
+                               self._coord_id(self.rows-1, j), c, u)
+        
+        # Northwest/Southeast arcs (only if using diagonal arcs)
+        if self.diagonal:
+            for j in range(self.columns-1):
+                for i in range(self.rows-1):
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(i, j),
+                                   self._coord_id(i+1, j+1), c, u)
+            
+                # Handle wraparound
+                if self.wrap:
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(self.rows-1, j),
+                                   self._coord_id(0, j+1), c, u)
+        
+        # Southwest/Northeast arcs (only if using diagonal arcs)
+        if self.diagonal:
+            for j in range(self.columns-1):
+                for i in range(self.rows-1):
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(i+1, j),
+                                   self._coord_id(i, j+1), c, u)
+            
+                # Handle wraparound
+                if self.wrap:
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(0, j),
+                                   self._coord_id(self.rows-1, j+1), c, u)
+        
+        # Southeast/Northwest arcs (only if using diagonal and reverse arcs)
+        if self.reverse and self.diagonal:
+            for j in range(self.columns-1):
+                for i in range(self.rows-1):
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(i+1, j+1),
+                                   self._coord_id(i, j), c, u)
+            
+                # Handle wraparound
+                if self.wrap:
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(0, j+1),
+                                   self._coord_id(self.rows-1, j), c, u)
+        
+        # Northeast/Southwest arcs (only if using diagonal and reverse arcs)
+        if self.reverse and self.diagonal:
+            for j in range(self.columns-1):
+                for i in range(self.rows-1):
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(i, j+1),
+                                   self._coord_id(i+1, j), c, u)
+            
+                # Handle wraparound
+                if self.wrap:
+                    c = self.Rng.generate(self.mincost, self.maxcost)
+                    u = self.Rng.generate(self.mincap, self.maxcap)
+                    self._make_arc(self._coord_id(self.rows-1, j+1),
+                                   self._coord_id(0, j), c, u)
+        
+        # Master sink arcs
+        for i in range(self.rows):
+            self._make_arc(self._coord_id(i, self.columns-1),
+                           self._node_count, 0, self.supply)
     
     #-------------------------------------------------------------------------
     
@@ -219,8 +312,7 @@ class GridNetworkGenerator:
         
         If markers are included, comments are added to indicate where
         certain ranges of special arcs begin and end, including: master source
-        arcs, skeleton rows, and master sink arcs. Note that some of the
-        master source/sink arcs are, themselves, skeleton arcs.
+        arcs, skeleton rows, and master sink arcs.
         """
         
         # Begin to write output string
@@ -274,8 +366,10 @@ class GridNetworkGenerator:
                 out += "c  *** Master source arcs begin here ***\n"
             if markers and i == self.rows:
                 out += "c  *** Master source arcs end here ***\n"
-                out += "c  *** Skeleton arcs begin here ***\n"
-            if markers and i == self.rows + self.skeleton*(self.columns-1):
+                if self.skeleton > 0:
+                    out += "c  *** Skeleton arcs begin here ***\n"
+            if (markers and self.skeleton > 0 and
+                i == self.rows + self.skeleton*(self.columns-1)):
                 out += "c  *** Skeleton arcs end here ***\n"
             if markers and i == len(self._arcs) - self.rows:
                 out += "c  *** Master sink arcs begin here ***\n"
