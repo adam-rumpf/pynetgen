@@ -61,7 +61,8 @@ The command line arguments for the NETGEN script are as follows (in order):
     tsources -- number of transshipment sources (default 0)
     tsinks -- number of transshipment sinks (default 0)
     hicost -- percent of skeleton arcs (0-100) given maximum cost (default 0)
-    capacitated -- percent of arcs (0-100) that are capacitated (default 100)
+    capacitated -- percent of skeleton arcs (0-100) that are capacitated
+        (default 100)
     mincap -- minimum arc capacity (default 100)
     maxcap -- maximum arc capacity (default 1000)
     rng -- index of random network generator to use (default 0), including:
@@ -96,10 +97,13 @@ the min/max costs are both set to 1.
 
 Skeleton arcs are part of NETGEN's process for generating minimum-cost flow
 problems, and are included to ensure feasibility. They are a subset of arcs
-that include paths from sources to sinks, and they are uncapacitated in order
-to ensure that the network can carry sufficient flow, but a fraction of them
-are chosen to receive the maximum possible cost in order to discourage
-uninteresting solutions that use only the skeleton arcs.
+that include paths from sources to sinks, and they are guaranteed to possess
+sufficient capacity to carry all supply from the sources to the sinks, but a
+fraction of them may be chosen to receive the maximum possible cost in order to
+discourage uninteresting solutions that use only the skeleton arcs.
+
+Any skeleton arc chosen to be "uncapacitated" is simply given a capacity equal
+to the total supply value.
 """
 _grid_instructions = """
 usage: pynetgen [-f [FILE]] grid [ARGS ...]
@@ -121,7 +125,8 @@ The command line arguments for the grid-based method are as follows (in order):
     maxcost -- maximum arc cost (default 99)
     supply -- total supply at the master supply node (default 1000)
     hicost -- percent of skeleton arcs (0-100) given maximum cost (default 0)
-    capacitated -- percent of arcs (0-100) that are capacitated (default 100)
+    capacitated -- percent of skeleton arcs (0-100) that are capacitated
+        (default 100)
     mincap -- minimum arc capacity (default 100)
     maxcap -- maximum arc capacity (default 1000)
     rng -- index of random network generator to use (default 0), including:
@@ -161,6 +166,9 @@ is set by the "skeleton" attribute, from North to South. The skeleton rows,
 combined, are guaranteed to have enough capacity to carry all flow, but a
 fraction of them may be chosen to receive the maximum possible cost in order
 to discourage uninteresting solutions that use only the skeleton arcs.
+
+Any skeleton arc chosen to be "uncapacitated" is simply given a capacity equal
+to the total supply value.
 
 In the output file, the different types of arcs in the arc list are divided
 using comments. In order, they consist of: the master supply arcs, the master

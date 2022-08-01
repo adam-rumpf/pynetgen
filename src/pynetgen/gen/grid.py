@@ -43,7 +43,7 @@ class GridNetworkGenerator:
         supply -- total supply at the master supply node (default 1000)
         hicost -- percent of skeleton arcs (0-100) given maximum cost
             (default 0)
-        capacitated -- percent of arcs (0-100) that are capacitated
+        capacitated -- percent of skeleton arcs (0-100) that are capacitated
             (default 100)
         mincap -- minimum arc capacity (default 100)
         maxcap -- maximum arc capacity (default 1000)
