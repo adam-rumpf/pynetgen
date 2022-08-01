@@ -37,7 +37,7 @@ class NetgenNetworkGenerator:
         tsinks -- number of transshipment sinks (default 0)
         hicost -- percent of skeleton arcs (0-100) given maximum cost
             (default 0)
-        capacitated -- percent of arcs (0-100) that are capacitated
+        capacitated -- percent of skeleton arcs (0-100) that are capacitated
             (default 100)
         mincap -- minimum arc capacity (default 100)
         maxcap -- maximum arc capacity (default 1000)
@@ -87,7 +87,7 @@ class NetgenNetworkGenerator:
         self.maxcost = int(maxcost)
         if self.mincost > self.maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        self.supply = int(supply)
+        self.supply = max(int(supply), 0)
         self.tsources = int(tsources)
         if self.tsources < 0:
             raise ValueError("transshipment source count must be nonnegative")
@@ -109,7 +109,7 @@ class NetgenNetworkGenerator:
         if self.mincap > self.maxcap:
             raise ValueError("min capacity cannot exceed max capacity")
         rng = int(rng)
-        if type != None:
+        if type is not None:
             type = int(type)
             if type < 0 or type > 2:
                 raise ValueError("problem type index must be 0-2 or None")
@@ -134,7 +134,7 @@ class NetgenNetworkGenerator:
         self._u = self._from[:] # final arc capacities
         
         # Determine which type of problem to generate
-        if type != None:
+        if type is None:
             if ((self.sources - self.tsources + self.sinks - self.tsinks ==
                 self.nodes) and self.sources - self.tsources ==
                 self.sinks - self.tsinks and self.sources == self.supply):
@@ -288,13 +288,13 @@ class NetgenNetworkGenerator:
                 self._pick_head(IndList, it)
                 del IndList
             
-            # Complete network with random arcs
-            for i in range(self.nodes - self.sinks + 1,
-                           self.nodes - self.sinks + self.tsinks):
-                IndList = IndexList(self.sources-self.tsources+1, self.nodes)
-                IndList.remove(i)
-                self._pick_head(IndList, i)
-                del IndList
+        # Complete network with random arcs
+        for i in range(self.nodes - self.sinks + 1,
+                       self.nodes - self.sinks + self.tsinks):
+            IndList = IndexList(self.sources-self.tsources+1, self.nodes)
+            IndList.remove(i)
+            self._pick_head(IndList, i)
+            del IndList
         
         return self._arc_count
     

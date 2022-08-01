@@ -61,7 +61,8 @@ The command line arguments for the NETGEN script are as follows (in order):
     tsources -- number of transshipment sources (default 0)
     tsinks -- number of transshipment sinks (default 0)
     hicost -- percent of skeleton arcs (0-100) given maximum cost (default 0)
-    capacitated -- percent of arcs (0-100) that are capacitated (default 100)
+    capacitated -- percent of skeleton arcs (0-100) that are capacitated
+        (default 100)
     mincap -- minimum arc capacity (default 100)
     maxcap -- maximum arc capacity (default 1000)
     rng -- index of random network generator to use (default 0), including:
@@ -96,10 +97,13 @@ the min/max costs are both set to 1.
 
 Skeleton arcs are part of NETGEN's process for generating minimum-cost flow
 problems, and are included to ensure feasibility. They are a subset of arcs
-that include paths from sources to sinks, and they are uncapacitated in order
-to ensure that the network can carry sufficient flow, but a fraction of them
-are chosen to receive the maximum possible cost in order to discourage
-uninteresting solutions that use only the skeleton arcs.
+that include paths from sources to sinks, and they are guaranteed to possess
+sufficient capacity to carry all supply from the sources to the sinks, but a
+fraction of them may be chosen to receive the maximum possible cost in order to
+discourage uninteresting solutions that use only the skeleton arcs.
+
+Any skeleton arc chosen to be "uncapacitated" is simply given a capacity equal
+to the total supply value.
 """
 _grid_instructions = """
 usage: pynetgen [-f [FILE]] grid [ARGS ...]
@@ -108,22 +112,27 @@ A grid-based network flows problem instance generator.
 
 The command line arguments for the grid-based method are as follows (in order):
     seed -- random number generator seed (default 1; -1 for random)
-    nodes -- number of nodes (default 10)
     rows -- number of grid rows (default 3)
     columns -- number of grid columns (default 4)
-    diagonal -- whether to include diagonal arcs (default 1)
-    reverse -- whether to include arcs in the reverse direction (default 1)
-    wrap -- whether to wrap the row adjacencies like a cylinder (default 0)
+    skeleton -- number of skeleton rows (default 1)
+    diagonal -- whether to include diagonal arcs (bool; default 1)
+    reverse -- whether to include arcs in the reverse direction
+        (bool; default 0)
+    wrap -- whether to wrap the row adjacencies like a cylinder
+        (bool; default 0)
     mincost -- minimum arc cost (default 10)
     maxcost -- maximum arc cost (default 99)
     supply -- total supply at the master supply node (default 1000)
     hicost -- percent of skeleton arcs (0-100) given maximum cost (default 0)
-    capacitated -- percent of arcs (0-100) that are capacitated (default 100)
+    capacitated -- percent of skeleton arcs (0-100) that are capacitated
+        (default 100)
     mincap -- minimum arc capacity (default 100)
     maxcap -- maximum arc capacity (default 1000)
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+    markers -- whether or not to include comment lines to specify different
+        types of special arcs (bool; default 0)
 
 All network parameters are integer.
 
@@ -135,13 +144,13 @@ screen if left blank.
 This is a simple network flows problem instance generator that uses a
 grid-based network. The network consists of a square grid of nodes, with a
 master source on one side feeding into all rows, and a master sink on the other
-side extracting from all rows.
+side extracting from all rows. Arcs incident to the master source and sink are
+zero-cost and uncapacitated.
 
 By default the resulting problem instance is a minimum-cost flow problem. A
 maximum flow problem is generated if the minimum and maximum arc costs are both
-set equal to 1 and the number of sources does not equal the total supply.
-Transshipment sources and sinks are not included. Transportation problems
-cannot be generated.
+set equal to 1 and the supply is anything other than 1. Transshipment sources
+and sinks are not included. Transportation problems cannot be generated.
 
 The master source is located on the West side while the master sink is located
 on the East side. All transshipment arcs feed into their immediate neighbors to
@@ -152,10 +161,15 @@ into the Western directions. If the "wrap" argument is True then the first row
 is considered to be adjacent to the last row.
 
 Skeleton arcs are included in minimum-cost flow problems in order to ensure
-feasibility. All arcs in the first row are treated as skeleton arcs, which are
-uncapacitated to ensure that the network can carry enough flow, but a fraction
-of them are chosen to receive the maximum possible cost in order to discourage
-uninteresting solutions that use only the skeleton arcs.
+feasibility. In the grid-based network skeleton arcs are made up of horizontal
+paths from the source to the sink. The number of rows made up of skeleton arcs
+is set by the "skeleton" attribute, from North to South. The skeleton rows,
+combined, are guaranteed to have enough capacity to carry all flow, but a
+fraction of them may be chosen to receive the maximum possible cost in order
+to discourage uninteresting solutions that use only the skeleton arcs.
+
+Any arc chosen to be "uncapacitated" is simply given a capacity equal to the
+total supply value.
 
 In the output file, the different types of arcs in the arc list are divided
 using comments. In order, they consist of: the master supply arcs, the master
@@ -214,9 +228,9 @@ def main():
                 print("Network successfully written to " + args.file)
             return None
         if arg_list[0] == "grid":
-            # The grid algorithm requires 0-14 argumets
-            if len(arg_list) > 14:
-                raise TypeError("grid algorithm requires 0-14 arguments")
+            # The grid algorithm requires 0-15 argumets
+            if len(arg_list) > 15:
+                raise TypeError("grid algorithm requires 0-15 arguments")
             grid_generate(*arg_list[1:], fname=args.file)
             if args.quiet == False and args.file != None:
                 print("Network successfully written to " + args.file)
@@ -297,20 +311,22 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
 
 #-----------------------------------------------------------------------------
 
-def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
-                 wrap=0, mincost=10, maxcost=99, supply=1000, hicost=0,
-                 capacitated=100, mincap=100, maxcap=1000, rng=0, type=None,
-                 fname=None):
+def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
+                  reverse=0, wrap=0, mincost=10, maxcost=99, supply=1000,
+                  hicost=0, capacitated=100, mincap=100, maxcap=1000, rng=0,
+                  type=None, markers=0, fname=None):
     """A grid-based random network generation function.
     
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
-    nodes -- number of nodes (default 10)
     rows -- number of grid rows (default 3)
     columns -- number of grid columns (default 4)
-    diagonal -- whether to include diagonal arcs (default 1)
-    reverse -- whether to include arcs in the reverse direction (default 1)
-    wrap -- whether to wrap the row adjacencies like a cylinder (default 0)
+    skeleton -- number of skeleton rows (default 1)
+    diagonal -- whether to include diagonal arcs (bool; default 1)
+    reverse -- whether to include arcs in the reverse direction
+        (bool; default 0)
+    wrap -- whether to wrap the row adjacencies like a cylinder
+        (bool; default 0)
     mincost -- minimum arc cost (default 10)
     maxcost -- maximum arc cost (default 99)
     supply -- total supply at the master supply node (default 1000)
@@ -326,6 +342,8 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
         default behavior explained below:
         0: minimum-cost flow
         1: maximum flow
+    markers -- whether or not to include comments to mark different ranges of
+        special arc types (default False)
     fname -- path of output file (default None, which prints to screen)
     
     All network parameters are integer.
@@ -333,7 +351,8 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
     The grid-based network consists of an m-by-n array of transshipment nodes
     with one master source that acts as a predecessor to every node in the
     first column and one master sink that acts as a successor to every node in
-    the last column.
+    the last column. Arcs incident to the master source and sink are zero-
+    cost and uncapacitated.
     
     In all cases an arc is generated from each transshipment node to the nodes
     North, East, and South of it (within the boundaries of the grid. If the
@@ -345,14 +364,13 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
     By default this method generates a minimum-cost flow problem (unless the
     "type" attribute is set). Skeleton arcs are generated by default in order
     to ensure that the network can carry the required amount of flow from the
-    master source to the master sink. To generate skeleton arcs, all arcs in
-    the first row are uncapacitated, and a fraction of them specified by
-    "hicost" are set to the maximum allowed cost.
+    master source to the master sink. The first "skeleton" rows, from top to
+    bottom, are given high enough capacity to carry all supply, with a
+    fraction "hicost" of them receiving the maximum possible cost.
 
-    Setting "mincost" and "maxcost" both equal to 1 instead results in a
-    maximum flow problem, in which case skeleton arcs are not generated.
-
-    Unlike NETGEN, transportation problems are not supported.
+    Setting "mincost" and "maxcost" both equal to 1 and setting "supply" to
+    anything other than 1 instead results in a maximum flow problem. Unlike
+    NETGEN, transportation problems are not supported.
 
     Arc costs and capacities are drawn uniformly at random from the specified
     ranges.
@@ -362,12 +380,13 @@ def grid_generate(seed=1, rows=3, columns=4, diagonal=1, reverse=1,
     
     # Initialize network generation object
     Network = GridNetworkGenerator(seed=seed, rows=rows, columns=columns,
-        diagonal=diagonal, reverse=reverse, wrap=wrap, mincost=mincost,
-        maxcost=maxcost, supply=supply, hicost=hicost, capacitated=capacitated,
-        mincap=mincap, maxcap=maxcap, rng=rng, type=type)
+        skeleton=skeleton, diagonal=diagonal, reverse=reverse, wrap=wrap,
+        mincost=mincost, maxcost=maxcost, supply=supply, hicost=hicost,
+        capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng,
+        type=type)
     
     # Print the network to the specified destination
-    Network.write(fname=fname)
+    Network.write(fname=fname, markers=markers)
     
     del Network
     
