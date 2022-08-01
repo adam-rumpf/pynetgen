@@ -153,7 +153,37 @@ class GridNetworkGenerator:
         # West/East rows
         for i in range(self.rows):
             for j in range(self.columns-1):
-                pass###
+                c = self.Rng.generate(self.mincost, self.maxcost) # cost
+                u = self.Rng.generate(self.mincap, self.maxcap) # capacity
+                
+                # Skeleton rows
+                if i < self.skeleton:
+                    # Roll for high cost
+                    if self.Rng.generate(1, 100) <= self.hicost:
+                        c = self.maxcost
+                    # Roll for capacitated
+                    if self.Rng.generate(1, 100) <= self.capacitated:
+                        u = skeleton_cap
+                    else:
+                        u = self.supply
+                
+                self._make_arc(self._coord_id(i, j), self._coord_id(i, j+1),
+                               c, u)
+        
+        # North/South columns
+        for j in range(self.columns):
+            for i in range(self.rows-1):
+                c = self.Rng.generate(self.mincost, self.maxcost) # cost
+                u = self.Rng.generate(self.mincap, self.maxcap)
+                self._make_arc(self._coord_id(i, j), self._coord_id(i+1, j),
+                               c, u)
+            
+            # Handle wraparound
+            if self.wrap:
+                c = self.Rng.generate(self.mincost, self.maxcost) # cost
+                u = self.Rng.generate(self.mincap, self.maxcap)
+                self._make_arc(self._coord_id(self.rows, j),
+                               self._coord_id(0, j), c, u)
     
     #-------------------------------------------------------------------------
     
@@ -164,7 +194,7 @@ class GridNetworkGenerator:
     
     #-------------------------------------------------------------------------
     
-    def _coordinate_index(self, i, j):
+    def _coord_id(self, i, j):
         """Returns the node index located at a given grid position.
         
         Row and column numbers begin at 0.
@@ -179,11 +209,18 @@ class GridNetworkGenerator:
     
     #-------------------------------------------------------------------------
     
-    def write(self, fname=None):
+    def write(self, fname=None, markers=False):
         """Writes the completed network to a file (or prints to screen).
         
         Keyword arguments:
         fname -- output file path (default None, which prints to screen)
+        markers -- whether to include comments within the output file to
+            indicate the different types of arcs (default False)
+        
+        If markers are included, comments are added to indicate where
+        certain ranges of special arcs begin and end, including: master source
+        arcs, skeleton rows, and master sink arcs. Note that some of the
+        master source/sink arcs are, themselves, skeleton arcs.
         """
         
         # Begin to write output string
@@ -231,8 +268,20 @@ class GridNetworkGenerator:
             out += f"n {self._node_count} {-self.supply}\n" # master sink
         
         # Same arc attributes for both problem types
-        for a in self._arcs:
+        for i in range(len(self._arcs)):
+            a = self._arcs[i]
+            if markers and i == 0:
+                out += "c  *** Master source arcs begin here ***\n"
+            if markers and i == self.rows:
+                out += "c  *** Master source arcs end here ***\n"
+                out += "c  *** Skeleton arcs begin here ***\n"
+            if markers and i == self.rows + self.skeleton*(self.columns-1):
+                out += "c  *** Skeleton arcs end here ***\n"
+            if markers and i == len(self._arcs) - self.rows:
+                out += "c  *** Master sink arcs begin here ***\n"
             out += f"a {a[0]} {a[1]} {a[2]} {a[3]}\n"
+            if markers and i == len(self._arcs) - 1:
+                out += "c  *** Master sink arcs end here ***\n"
         
         # Write or print string
         if fname is None:

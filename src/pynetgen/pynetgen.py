@@ -132,6 +132,8 @@ The command line arguments for the grid-based method are as follows (in order):
     rng -- index of random network generator to use (default 0), including:
         0: the original NETGEN pseudorandom number generator
         1: the Python standard library random number generator
+    markers -- whether or not to include comment lines to specify different
+        types of special arcs (bool; default 0)
 
 All network parameters are integer.
 
@@ -227,9 +229,9 @@ def main():
                 print("Network successfully written to " + args.file)
             return None
         if arg_list[0] == "grid":
-            # The grid algorithm requires 0-14 argumets
-            if len(arg_list) > 14:
-                raise TypeError("grid algorithm requires 0-14 arguments")
+            # The grid algorithm requires 0-15 argumets
+            if len(arg_list) > 15:
+                raise TypeError("grid algorithm requires 0-15 arguments")
             grid_generate(*arg_list[1:], fname=args.file)
             if args.quiet == False and args.file != None:
                 print("Network successfully written to " + args.file)
@@ -313,7 +315,7 @@ def netgen_generate(seed=1, nodes=10, sources=3, sinks=3, density=30,
 def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
                   reverse=1, wrap=0, mincost=10, maxcost=99, supply=1000,
                   hicost=0, capacitated=100, mincap=100, maxcap=1000, rng=0,
-                  type=None, fname=None):
+                  type=None, markers=0, fname=None):
     """A grid-based random network generation function.
     
     Keyword arguments:
@@ -342,6 +344,8 @@ def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
         default behavior explained below:
         0: minimum-cost flow
         1: maximum flow
+    markers -- whether or not to include comments to mark different ranges of
+        special arc types (default False)
     fname -- path of output file (default None, which prints to screen)
     
     All network parameters are integer.
@@ -377,14 +381,20 @@ def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
     """
     
     # Initialize network generation object
+    ###Network = GridNetworkGenerator(seed=seed, rows=rows, columns=columns,
+    ###    skeleton=skeleton, diagonal=diagonal, reverse=reverse, wrap=wrap,
+    ###    mincost=mincost, maxcost=maxcost, supply=supply, hicost=hicost,
+    ###    capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng,
+    ###    type=type)
     Network = GridNetworkGenerator(seed=seed, rows=rows, columns=columns,
-        skeleton=skeleton, diagonal=diagonal, reverse=reverse, wrap=wrap,
+        skeleton=2, diagonal=diagonal, reverse=reverse, wrap=wrap,
         mincost=mincost, maxcost=maxcost, supply=supply, hicost=hicost,
         capacitated=capacitated, mincap=mincap, maxcap=maxcap, rng=rng,
         type=type)
     
     # Print the network to the specified destination
-    Network.write(fname=fname)
+    ###Network.write(fname=fname, markers=markers)
+    Network.write(fname=fname, markers=True)
     
     del Network
     
