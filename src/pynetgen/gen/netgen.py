@@ -87,7 +87,7 @@ class NetgenNetworkGenerator:
         self.maxcost = int(maxcost)
         if self.mincost > self.maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        self.supply = int(supply)
+        self.supply = max(int(supply), 0)
         self.tsources = int(tsources)
         if self.tsources < 0:
             raise ValueError("transshipment source count must be nonnegative")
@@ -134,7 +134,7 @@ class NetgenNetworkGenerator:
         self._u = self._from[:] # final arc capacities
         
         # Determine which type of problem to generate
-        if type is not None:
+        if type is None:
             if ((self.sources - self.tsources + self.sinks - self.tsinks ==
                 self.nodes) and self.sources - self.tsources ==
                 self.sinks - self.tsinks and self.sources == self.supply):

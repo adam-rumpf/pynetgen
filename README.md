@@ -65,7 +65,9 @@ $ pynetgen grid help
 
 ## DIMACS File Format
 
-The resulting network is output as a file in [DIMACS graph format](http://dimacs.rutgers.edu/archive/Challenges/) (or printed to the screen, in case no file path is given). To give a brief description of the format, a DIMACS graph file is a pure text file in which every line begins with either the letter `c`, `p`, `n`, or `a` to specify what type of information it defines. In the case of a minimum-cost flows problem:
+The resulting network is output as a file in [DIMACS graph format](http://dimacs.rutgers.edu/archive/Challenges/) (or printed to the screen, in case no file path is given). To give a brief description of the format, a DIMACS graph file is a pure text file in which every line begins with either the letter `c`, `p`, `n`, or `a` to specify what type of information it defines.
+
+In the case of a minimum-cost flows problem, the lines are formatted as follows:
 
 * `c` indicates a comment line. The output file begins with a header made up of comment lines describing the parameters used to generate the problem.
 * `p` indicates the problem definition. This follows the header and has the format `p min NODES DENSITY`, where:
@@ -79,4 +81,8 @@ The resulting network is output as a file in [DIMACS graph format](http://dimacs
   * `MINCAP` and `MAXCAP` are the arc's lower and upper capacity bounds, respectively.
   * `COST` is the arc's unit flow cost.
 
-The output file for a maximum-flow problem is mostly the same, except that the objective is `max` instead of `min`, and source and sink nodes are given the `SUPPLY` values `s` and `t`, respectively, rather than a specific number.
+The output file for a maximum-flow problem follows the same format with the following exceptions:
+
+* The objective is `max` instead of `min`.
+* Source and sink nodes are given a `SUPPLY` value of `s` or `t`, respectively, rather than a specific number.
+* Arc definitions omit the cost and lower capacity bound, now having the format `a FROM TO MAXCAP`.

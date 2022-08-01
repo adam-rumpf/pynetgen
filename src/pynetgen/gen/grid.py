@@ -29,7 +29,6 @@ class GridNetworkGenerator:
         
         Keyword arguments:
         seed -- random number generator seed (default 1; -1 for random)
-        nodes -- number of nodes (default 10)
         rows -- number of grid rows (default 3)
         columns -- number of grid columns (default 4)
         skeleton -- number of skeleton rows (default 1)
@@ -61,8 +60,8 @@ class GridNetworkGenerator:
         The problem type is implicitly chosen based on the network attributes
         (unless the "type" attribute is set). By default the problem is
         minimum-cost flow. It is a maximum flow problem if the total supply
-        does not equal the number of sources, and if the minimum and maximum
-        arc costs are both exactly 1.
+        is anything other than 1, and if the minimum and maximum arc costs are
+        both exactly 1.
         """
         
         # Validate inputs and convert to correct data types
@@ -81,9 +80,9 @@ class GridNetworkGenerator:
         self.wrap = bool(int(wrap))
         self.mincost = int(mincost)
         self.maxcost = int(maxcost)
-        if self.mincost > maxcost:
+        if self.mincost > self.maxcost:
             raise ValueError("min cost cannot exceed max cost")
-        self.supply = int(supply)
+        self.supply = max(int(supply), 0)
         self.hicost = int(hicost)
         if self.hicost < 0 or self.hicost > 100:
             raise ValueError("high cost percentage must be in [0,100]")
@@ -102,14 +101,6 @@ class GridNetworkGenerator:
         
         # Initialize random number generation object
         if rng == 0:
-            Rng = NetgenRandom(seed)
-        elif rng == 1:
-            Rng = StandardRandom(seed)
-        else:
-            raise ValueError("RNG index must be 0 or 1")
-        
-        # Initialize random number generation object
-        if rng == 0:
             self.Rng = NetgenRandom(seed)
         elif rng == 1:
             self.Rng = StandardRandom(seed)
@@ -119,16 +110,14 @@ class GridNetworkGenerator:
         
         # Initialize attributes for temporary storage
         self._type = 0 # problem type (0: mincost, 1: maxflow)
-        self._arc_count = 0 # number of arcs generated
-        self._node_count = rows*columns + 2 # number of nodes generated
+        self._node_count = self.rows*self.columns + 2 # nodes generated
         
         # Arcs are stored in a queue of (tail, head, cost, capacity) tuples
         self._arcs = collections.deque()
         
         # Determine which type of problem to generate
-        if type is not None:
-            if (self.sources != self.supply and self.mincost == 1 and
-                self.maxcost == 1):
+        if type is None:
+            if (self.supply != 1 and self.mincost == 1 and self.maxcost == 1):
                 self._type = 1
             else:
                 self._type = 0
@@ -342,40 +331,53 @@ class GridNetworkGenerator:
             
             # Objective
             out += "c\nc  *** Maximum flow ***\nc\n"
-            out += f"p max {self._node_count} {self._arc_count}\n"
+            out += f"p max {self._node_count} {len(self._arcs)}\n"
             
             # Supply constraints
             out += "n 1 s\n" # master source
             out += f"n {self._node_count} t\n" # master sink
+            
+            # Arc definitions
+            for i in range(len(self._arcs)):
+                a = self._arcs[i]
+                if markers and i == 0:
+                    out += "c  *** Master source arcs begin here ***\n"
+                if markers and i == self.rows:
+                    out += "c  *** Master source arcs end here ***\n"
+                if markers and i == len(self._arcs) - self.rows:
+                    out += "c  *** Master sink arcs begin here ***\n"
+                out += f"a {a[0]} {a[1]} {a[3]}\n"
+                if markers and i == len(self._arcs) - 1:
+                    out += "c  *** Master sink arcs end here ***\n"
         
         # Handle min-cost flow problem
         else:
             
             # Objective
             out += "c\nc  *** Minimum cost flow ***\nc\n"
-            out += f"p min {self._node_count} {self._arc_count}\n"
+            out += f"p min {self._node_count} {len(self._arcs)}\n"
             
             # Supply constraints
             out += f"n 1 {self.supply}\n" # master source
             out += f"n {self._node_count} {-self.supply}\n" # master sink
         
-        # Same arc attributes for both problem types
-        for i in range(len(self._arcs)):
-            a = self._arcs[i]
-            if markers and i == 0:
-                out += "c  *** Master source arcs begin here ***\n"
-            if markers and i == self.rows:
-                out += "c  *** Master source arcs end here ***\n"
-                if self.skeleton > 0:
-                    out += "c  *** Skeleton arcs begin here ***\n"
-            if (markers and self.skeleton > 0 and
-                i == self.rows + self.skeleton*(self.columns-1)):
-                out += "c  *** Skeleton arcs end here ***\n"
-            if markers and i == len(self._arcs) - self.rows:
-                out += "c  *** Master sink arcs begin here ***\n"
-            out += f"a {a[0]} {a[1]} {a[2]} {a[3]}\n"
-            if markers and i == len(self._arcs) - 1:
-                out += "c  *** Master sink arcs end here ***\n"
+            # Arc definitions
+            for i in range(len(self._arcs)):
+                a = self._arcs[i]
+                if markers and i == 0:
+                    out += "c  *** Master source arcs begin here ***\n"
+                if markers and i == self.rows:
+                    out += "c  *** Master source arcs end here ***\n"
+                    if self.skeleton > 0:
+                        out += "c  *** Skeleton arcs begin here ***\n"
+                if (markers and self.skeleton > 0 and
+                    i == self.rows + self.skeleton*(self.columns-1)):
+                    out += "c  *** Skeleton arcs end here ***\n"
+                if markers and i == len(self._arcs) - self.rows:
+                    out += "c  *** Master sink arcs begin here ***\n"
+                out += f"a {a[0]} {a[1]} 0 {a[3]} {a[2]}\n"
+                if markers and i == len(self._arcs) - 1:
+                    out += "c  *** Master sink arcs end here ***\n"
         
         # Write or print string
         if fname is None:

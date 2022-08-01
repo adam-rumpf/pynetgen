@@ -112,7 +112,6 @@ A grid-based network flows problem instance generator.
 
 The command line arguments for the grid-based method are as follows (in order):
     seed -- random number generator seed (default 1; -1 for random)
-    nodes -- number of nodes (default 10)
     rows -- number of grid rows (default 3)
     columns -- number of grid columns (default 4)
     skeleton -- number of skeleton rows (default 1)
@@ -150,9 +149,8 @@ zero-cost and uncapacitated.
 
 By default the resulting problem instance is a minimum-cost flow problem. A
 maximum flow problem is generated if the minimum and maximum arc costs are both
-set equal to 1 and the number of sources does not equal the total supply.
-Transshipment sources and sinks are not included. Transportation problems
-cannot be generated.
+set equal to 1 and the supply is anything other than 1. Transshipment sources
+and sinks are not included. Transportation problems cannot be generated.
 
 The master source is located on the West side while the master sink is located
 on the East side. All transshipment arcs feed into their immediate neighbors to
@@ -321,7 +319,6 @@ def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
     
     Keyword arguments:
     seed -- random number generator seed (default 1; -1 for random)
-    nodes -- number of nodes (default 10)
     rows -- number of grid rows (default 3)
     columns -- number of grid columns (default 4)
     skeleton -- number of skeleton rows (default 1)
@@ -371,10 +368,9 @@ def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
     bottom, are given high enough capacity to carry all supply, with a
     fraction "hicost" of them receiving the maximum possible cost.
 
-    Setting "mincost" and "maxcost" both equal to 1 instead results in a
-    maximum flow problem, in which case skeleton arcs are not generated.
-
-    Unlike NETGEN, transportation problems are not supported.
+    Setting "mincost" and "maxcost" both equal to 1 and setting "supply" to
+    anything other than 1 instead results in a maximum flow problem. Unlike
+    NETGEN, transportation problems are not supported.
 
     Arc costs and capacities are drawn uniformly at random from the specified
     ranges.
@@ -390,8 +386,7 @@ def grid_generate(seed=1, rows=3, columns=4, skeleton=1, diagonal=1,
         type=type)
     
     # Print the network to the specified destination
-    ###Network.write(fname=fname, markers=markers)
-    Network.write(fname=fname, markers=True)
+    Network.write(fname=fname, markers=markers)
     
     del Network
     
