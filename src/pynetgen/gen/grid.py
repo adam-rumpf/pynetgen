@@ -5,6 +5,9 @@ from pynetgen.util.randit import NetgenRandom
 from pynetgen.util.randit import StandardRandom
 from pynetgen._version import __version__
 
+import collections
+import math
+
 #=============================================================================
 
 class GridNetworkGenerator:
@@ -119,6 +122,9 @@ class GridNetworkGenerator:
         self._arc_count = 0 # number of arcs generated
         self._node_count = rows*columns + 2 # number of nodes generated
         
+        # Arcs are stored in a queue of (tail, head, cost, capacity) tuples
+        self._arcs = collections.deque()
+        
         # Determine which type of problem to generate
         if type is not None:
             if (self.sources != self.supply and self.mincost == 1 and
@@ -135,8 +141,41 @@ class GridNetworkGenerator:
     def _create_problem(self):
         """Generates a min-cost flow or max-flow problem."""
         
-        ###
-        pass
+        # Determine minimum capacities of skeleton rows
+        skeleton_cap = self.supply
+        if self.skeleton > 1:
+            skeleton_cap = math.ceil(self.supply/self.skeleton)
+        
+        # Master supply arcs
+        for i in range(self.rows):
+            self._make_arc(1, i+2, 0, self.supply)
+        
+        # West/East rows
+        for i in range(self.rows):
+            for j in range(self.columns-1):
+                pass###
+    
+    #-------------------------------------------------------------------------
+    
+    def _make_arc(self, tail, head, cost, cap):
+        """Records a new arc and its attributes."""
+        
+        self._arcs.append((tail, head, cost, cap))
+    
+    #-------------------------------------------------------------------------
+    
+    def _coordinate_index(self, i, j):
+        """Returns the node index located at a given grid position.
+        
+        Row and column numbers begin at 0.
+        
+        Index 1 is the master source, and the largest index is always the
+        master sink. All remaining nodes are labeled according to their grid
+        position, with the index ascending along each row from West to East
+        and between rows from North to South.
+        """
+        
+        return i*self.columns + j + 2
     
     #-------------------------------------------------------------------------
     
@@ -171,15 +210,29 @@ class GridNetworkGenerator:
         
         # Handle max flow problem
         if self._type == 1:
+            
+            # Objective
             out += "c\nc  *** Maximum flow ***\nc\n"
             out += f"p max {self._node_count} {self._arc_count}\n"
-            ###
+            
+            # Supply constraints
+            out += "n 1 s\n" # master source
+            out += f"n {self._node_count} t\n" # master sink
         
         # Handle min-cost flow problem
         else:
+            
+            # Objective
             out += "c\nc  *** Minimum cost flow ***\nc\n"
             out += f"p min {self._node_count} {self._arc_count}\n"
-            ###
+            
+            # Supply constraints
+            out += f"n 1 {self.supply}\n" # master source
+            out += f"n {self._node_count} {-self.supply}\n" # master sink
+        
+        # Same arc attributes for both problem types
+        for a in self._arcs:
+            out += f"a {a[0]} {a[1]} {a[2]} {a[3]}\n"
         
         # Write or print string
         if fname is None:
